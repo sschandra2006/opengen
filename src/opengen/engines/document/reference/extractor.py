@@ -176,7 +176,7 @@ class ReferenceExtractor:
     """Convenience wrapper for extracting knowledge from reference documents."""
 
     @classmethod
-    def extract_reference(cls, file_path: str) -> ExtractedInformation:
+    def extract_reference(cls, file_path: str, provider_mgr: Optional[ProviderManager] = None) -> ExtractedInformation:
         import hashlib
         path = Path(file_path)
         if not path.exists():
@@ -188,6 +188,6 @@ class ReferenceExtractor:
             )
         with open(file_path, "rb") as f:
             file_hash = hashlib.sha256(f.read()).hexdigest()
-        engine = ReferenceIntelligenceEngine()
+        engine = ReferenceIntelligenceEngine(provider_mgr=provider_mgr)
         return engine.process_reference(file_path=file_path, file_hash=file_hash)
 

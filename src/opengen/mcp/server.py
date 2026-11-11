@@ -35,19 +35,49 @@ def tool_create_document(
     output_format: str = "docx",
     title: str = "Document"
 ) -> Dict[str, Any]:
-    """Creates a fresh document from structured content or JSON."""
+    """Creates a fresh document from structured content or JSON into an isolated run directory."""
+    import tempfile
+    import docx
+
     try:
         data = json.loads(content_json) if isinstance(content_json, str) else content_json
     except Exception:
         data = {"title": title, "content": content_json}
 
-    # Use client to populate / generate
-    res = client.documents.populate(
-        template="dummy_template.docx" if not settings.TEMPLATES_DIR.exists() else str(next(settings.TEMPLATES_DIR.glob("*.docx"), "template.docx")),
-        instruction=title,
-        jinja2_context=data if isinstance(data, dict) else {"content": data}
-    )
+    # If a valid template exists in TEMPLATES_DIR, use it; otherwise build a clean starter DOCX in temp
+    existing_tpl = next(settings.TEMPLATES_DIR.glob("*.docx"), None) if settings.TEMPLATES_DIR.exists() else None
+    if existing_tpl:
+        res = client.documents.populate(
+            template=str(existing_tpl),
+            instruction=title,
+            jinja2_context=data if isinstance(data, dict) else {"content": data}
+        )
+    else:
+        job_id, run_dir = settings.allocate_run_dir("documents")
+        out_docx = run_dir / f"{title.replace(' ', '_')}_{job_id}.docx"
+        doc = docx.Document()
+        doc.add_heading(str(data.get("title", title)) if isinstance(data, dict) else title, level=0)
+        if isinstance(data, dict):
+            if "content" in data and data["content"]:
+                doc.add_paragraph(str(data["content"]))
+            for sec in data.get("sections", []):
+                if isinstance(sec, dict):
+                    if sec.get("heading"):
+                        doc.add_heading(str(sec["heading"]), level=1)
+                    if sec.get("body"):
+                        doc.add_paragraph(str(sec["body"]))
+                else:
+                    doc.add_paragraph(str(sec))
+        else:
+            doc.add_paragraph(str(data))
+
+        with tempfile.TemporaryDirectory(prefix="opengen_fresh_") as tmp_dir:
+            staged = f"{tmp_dir}/fresh.docx"
+            doc.save(staged)
+            res = client.documents.populate(template=staged, output_docx_path=str(out_docx), instruction=title)
+
     return {
+        "job_id": res.job_id,
         "docx_path": res.docx_path,
         "pdf_path": res.pdf_path,
         "page_count": res.page_count,
@@ -191,8 +221,8 @@ def tool_get_generation_status(job_id: str) -> Dict[str, Any]:
 
 
 def tool_get_generation_cost(job_id: str = "") -> Dict[str, Any]:
-    """Retrieves detailed token usage and USD expenditure telemetry."""
-    return client.jobs.get_cost()
+    """Retrieves detailed token usage and USD expenditure telemetry (scoped per job_id if given)."""
+    return client.jobs.get_cost(job_id=job_id or None)
 
 
 # -------------------------------------------------------------------------

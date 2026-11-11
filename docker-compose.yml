@@ -13,12 +13,13 @@ services:
       - OPENGEN_QUEUE_BACKEND=redis
       - OPENGEN_REDIS_URL=redis://redis:6379/0
       - OPENGEN_CACHE_DIR=/app/cache
-      - OPENGEN_OUTPUT_DIR=/app/data/outputs
+      - OPENGEN_OUTPUT_DIR=/app/output
       - OPENGEN_UPLOAD_DIR=/app/data/uploads
     env_file:
       - .env
     volumes:
       - opengen_data:/app/data
+      - opengen_output:/app/output
       - opengen_cache:/app/cache
     depends_on:
       - redis
@@ -32,12 +33,13 @@ services:
       - OPENGEN_QUEUE_BACKEND=redis
       - OPENGEN_REDIS_URL=redis://redis:6379/0
       - OPENGEN_CACHE_DIR=/app/cache
-      - OPENGEN_OUTPUT_DIR=/app/data/outputs
+      - OPENGEN_OUTPUT_DIR=/app/output
       - OPENGEN_UPLOAD_DIR=/app/data/uploads
     env_file:
       - .env
     volumes:
       - opengen_data:/app/data
+      - opengen_output:/app/output
       - opengen_cache:/app/cache
     depends_on:
       - redis
@@ -54,5 +56,6 @@ services:
 
 volumes:
   opengen_data:
+  opengen_output:
   opengen_cache:
   redis_data:

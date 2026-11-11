@@ -18,8 +18,10 @@ class DocumentRenderer:
 
     @classmethod
     def convert_docx_to_pdf(cls, docx_path: str, output_pdf_path: str) -> str:
+        import tempfile
         docx_abs = str(Path(docx_path).resolve())
         pdf_abs = str(Path(output_pdf_path).resolve())
+        Path(pdf_abs).parent.mkdir(parents=True, exist_ok=True)
 
         # Attempt 1: Native Windows Word COM automation
         if os.name == "nt":
@@ -75,16 +77,16 @@ class DocumentRenderer:
                     break
 
         if soffice_cmd:
+            import tempfile
             try:
-                out_dir = str(Path(pdf_abs).parent)
-                cmd = [soffice_cmd, "--headless", "--convert-to", "pdf", docx_abs, "--outdir", out_dir]
-                subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=60)
-                produced_pdf = Path(out_dir) / f"{Path(docx_abs).stem}.pdf"
-                if produced_pdf.exists():
-                    if str(produced_pdf) != pdf_abs:
-                        shutil.move(str(produced_pdf), pdf_abs)
-                    logger.info(f"DOCX converted to PDF via LibreOffice: {pdf_abs}")
-                    return pdf_abs
+                with tempfile.TemporaryDirectory(prefix="opengen_lo_") as lo_out_dir:
+                    cmd = [soffice_cmd, "--headless", "--convert-to", "pdf", docx_abs, "--outdir", lo_out_dir]
+                    subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=60)
+                    produced_pdf = Path(lo_out_dir) / f"{Path(docx_abs).stem}.pdf"
+                    if produced_pdf.exists():
+                        shutil.copy2(str(produced_pdf), pdf_abs)
+                        logger.info(f"DOCX converted to PDF via LibreOffice: {pdf_abs}")
+                        return pdf_abs
             except Exception as e:
                 logger.warning(f"LibreOffice conversion failed: {e}")
 

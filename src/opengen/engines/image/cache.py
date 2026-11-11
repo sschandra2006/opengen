@@ -1,15 +1,24 @@
 """
 Prompt-Hash Persistent Caching for Engine C.
-Prevents duplicate API calls and credit expense on identical prompts.
+Prevents duplicate API calls and credit expense on identical prompts while distinguishing
+format and transparency parameters so unrelated options never collide.
 """
 import hashlib
 from typing import Optional
 from opengen.cache.disk_store import cache_manager
 
+
 class ImageCache:
     @staticmethod
-    def compute_hash(prompt: str, aspect_ratio: str, style: str, provider: str) -> str:
-        key = f"{prompt.strip().lower()}|{aspect_ratio}|{style}|{provider}"
+    def compute_hash(
+        prompt: str,
+        aspect_ratio: str,
+        style: str,
+        provider: str,
+        output_format: str = "png",
+        transparent_background: bool = False,
+    ) -> str:
+        key = f"{prompt.strip().lower()}|{aspect_ratio}|{style}|{provider}|{output_format}|{transparent_background}"
         return hashlib.sha256(key.encode("utf-8")).hexdigest()
 
     @classmethod

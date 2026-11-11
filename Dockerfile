@@ -28,7 +28,7 @@ COPY src/ /app/src/
 COPY app/ /app/app/
 
 # Create runtime directories
-RUN mkdir -p /app/data/uploads /app/data/outputs /app/cache
+RUN mkdir -p /app/data/uploads /app/output /app/cache
 
 EXPOSE 8000
 

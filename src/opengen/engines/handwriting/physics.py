@@ -3,7 +3,7 @@ Pen Physics & Ink Dynamics Simulator for Engine D.
 Simulates ink velocity, downstroke pressure dynamics, and realistic ink opacity.
 """
 import random
-from typing import Tuple
+from typing import Optional, Tuple
 
 PEN_PALETTES = {
     "ballpoint_blue": (28, 59, 114),    # Hex #1C3B72
@@ -12,27 +12,29 @@ PEN_PALETTES = {
     "pencil": (58, 58, 58)              # Graphite grey
 }
 
+
 class PenPhysicsSimulator:
     """Calculates dynamic ink color and opacity based on simulated pen pressure."""
 
     @classmethod
-    def get_ink_color(cls, pen_type: str = "ballpoint_blue", is_downstroke: bool = False) -> Tuple[int, int, int, int]:
+    def get_ink_color(
+        cls,
+        pen_type: str = "ballpoint_blue",
+        is_downstroke: bool = False,
+        rng: Optional[random.Random] = None,
+    ) -> Tuple[int, int, int, int]:
+        r = rng or random
         base_rgb = PEN_PALETTES.get(pen_type, PEN_PALETTES["ballpoint_blue"])
 
         if pen_type == "ballpoint_blue":
             # Heavier pressure and darker opacity on vertical downstrokes
-            if is_downstroke:
-                alpha = random.randint(245, 255)
-            else:
-                alpha = random.randint(210, 240)
+            alpha = r.randint(245, 255) if is_downstroke else r.randint(210, 240)
             return (*base_rgb, alpha)
 
         elif pen_type == "pencil":
-            # Graphite has lower saturation and softer opacity
-            alpha = random.randint(180, 220)
+            alpha = r.randint(180, 220)
             return (*base_rgb, alpha)
 
         else:
-            # Gel pen
-            alpha = random.randint(240, 255)
+            alpha = r.randint(240, 255)
             return (*base_rgb, alpha)

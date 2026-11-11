@@ -3,11 +3,14 @@ OpenGen Configuration Module.
 Provides centralized settings management for directories, providers, queues, and security.
 """
 import os
+import uuid
+from datetime import datetime, timezone
 from pathlib import Path
-from typing import Optional, Set
+from typing import Optional, Set, Tuple
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
@@ -22,8 +25,10 @@ class Settings(BaseSettings):
     DATA_DIR: Path = PROJECT_ROOT / "data"
     CACHE_DIR: Path = PROJECT_ROOT / "cache"
     UPLOAD_DIR: Path = PROJECT_ROOT / "data" / "uploads"
-    OUTPUT_DIR: Path = PROJECT_ROOT / "data" / "outputs"
+    OUTPUT_DIR: Path = PROJECT_ROOT / "output"
+    TEMPLATES_DIR: Path = PROJECT_ROOT / "templates"
     DB_PATH: Path = PROJECT_ROOT / "cache" / "metadata.db"
+    JOBS_DB_PATH: Path = PROJECT_ROOT / "cache" / "jobs.db"
 
     # Queue Settings
     QUEUE_BACKEND: str = "sqlite"  # "sqlite" or "redis"
@@ -37,6 +42,7 @@ class Settings(BaseSettings):
 
     # AI Provider Defaults
     DEFAULT_LLM_MODEL: str = "gemini/gemini-2.5-flash"
+    DEFAULT_PRIMARY_MODEL: str = "gemini/gemini-2.5-flash"
     DEFAULT_FAST_MODEL: str = "openai/gpt-4o-mini"
     DEFAULT_LOCAL_MODEL: str = "ollama/qwen3:8b"
     OLLAMA_BASE_URL: str = "http://localhost:11434"
@@ -56,5 +62,17 @@ class Settings(BaseSettings):
         """Idempotently creates necessary working directories."""
         for path in [self.DATA_DIR, self.CACHE_DIR, self.UPLOAD_DIR, self.OUTPUT_DIR]:
             path.mkdir(parents=True, exist_ok=True)
+
+    def allocate_run_dir(self, engine: str, job_id: Optional[str] = None) -> Tuple[str, Path]:
+        """
+        Allocates an isolated per-generation directory under output/<engine>/<timestamp>_<job_id>/
+        so consecutive or concurrent runs never overwrite or collide with each other.
+        """
+        jid = job_id or f"job_{uuid.uuid4().hex[:10]}"
+        ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_%f")[:20]
+        run_dir = self.OUTPUT_DIR / engine / f"{ts}_{jid}"
+        run_dir.mkdir(parents=True, exist_ok=True)
+        return jid, run_dir
+
 
 settings = Settings()

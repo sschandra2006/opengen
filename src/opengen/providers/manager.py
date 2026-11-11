@@ -19,8 +19,19 @@ T = TypeVar("T", bound=BaseModel)
 class ProviderManager:
     """Central gateway for all LLM inference operations."""
 
-    def __init__(self, default_model: Optional[str] = None):
-        self.default_model = default_model or settings.DEFAULT_LLM_MODEL
+    def __init__(
+        self,
+        default_model: Optional[str] = None,
+        api_key: Optional[str] = None,
+        cost_tracker: Optional[Any] = None,
+    ):
+        self._explicit_default_model = default_model
+        self.api_key = api_key
+        self.cost_tracker = cost_tracker
+
+    @property
+    def default_model(self) -> str:
+        return self._explicit_default_model or settings.DEFAULT_PRIMARY_MODEL or settings.DEFAULT_LLM_MODEL
 
     def generate_structured(
         self,
@@ -36,6 +47,7 @@ class ProviderManager:
         Executes structured generation using LiteLLM with fallback cascade.
         """
         target_model = model or self.default_model
+        effective_key = api_key or self.api_key
         fallback_chain = fallbacks or [settings.DEFAULT_FAST_MODEL, settings.DEFAULT_LOCAL_MODEL]
         models_to_try = [target_model] + [f for f in fallback_chain if f != target_model]
 
@@ -47,9 +59,11 @@ class ProviderManager:
                     prompt=prompt,
                     system_prompt=system_prompt,
                     response_model=response_model,
-                    api_key=api_key,
+                    api_key=effective_key,
                     temperature=temperature
                 )
+                if self.cost_tracker is not None:
+                    self.cost_tracker.add_report(cost_report)
                 return result_obj, cost_report
             except Exception as e:
                 logger.warning(f"Provider model '{m}' call failed: {e}. Trying fallback...")

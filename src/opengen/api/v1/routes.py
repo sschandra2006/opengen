@@ -1,26 +1,25 @@
 """
 Versioned REST API routes for OpenGen (/api/v1).
-Exposes endpoints for documents, presentations, images, handwriting, and job telemetry.
+Exposes endpoints for documents, presentations, images, handwriting, and per-job artifacts.
 """
 import os
 import shutil
 from pathlib import Path
 from typing import List, Dict, Any, Optional
-from pydantic import BaseModel, Field
-from fastapi import APIRouter, UploadFile, File, Form, HTTPException, BackgroundTasks
+from pydantic import BaseModel
+from fastapi import APIRouter, UploadFile, File, HTTPException
 from fastapi.responses import FileResponse
 
 from opengen.config import settings
 from opengen.client import OpenGenClient
 from opengen.security.path_guard import PathGuard
-from opengen.telemetry.cost_tracker import cost_tracker
 
 router = APIRouter(prefix="/api/v1", tags=["OpenGen Core API"])
 client = OpenGenClient()
 
 
 # -------------------------------------------------------------------------
-# Request / Response Schemas
+# Request Schemas
 # -------------------------------------------------------------------------
 
 class DocumentGenerateRequest(BaseModel):
@@ -60,7 +59,7 @@ class HandwritingGenerateRequest(BaseModel):
 
 @router.get("/health")
 def health_check():
-    """Health check endpoint reporting engine readiness and telemetry."""
+    """Health check endpoint reporting engine readiness and session telemetry."""
     return {
         "status": "online",
         "engines": {
@@ -69,7 +68,7 @@ def health_check():
             "image": "ready",
             "handwriting": "ready",
         },
-        "telemetry": cost_tracker.get_aggregate_cost()
+        "telemetry": client.jobs.get_cost()
     }
 
 
@@ -81,7 +80,6 @@ async def upload_file(file: UploadFile = File(...)):
     target_dir.mkdir(parents=True, exist_ok=True)
     target_path = target_dir / f"upload_{os.urandom(4).hex()}_{safe_name}"
 
-    # Path traversal validation
     PathGuard.validate_path(target_path, target_dir)
 
     with open(target_path, "wb") as buffer:
@@ -96,7 +94,7 @@ async def upload_file(file: UploadFile = File(...)):
 
 @router.post("/documents/generate")
 def generate_document(req: DocumentGenerateRequest):
-    """Submits or executes a Word/PDF document generation request."""
+    """Generates a Word/PDF document inside an isolated run directory."""
     try:
         res = client.documents.populate(
             template=req.template_path,
@@ -107,10 +105,11 @@ def generate_document(req: DocumentGenerateRequest):
         )
         return {
             "status": "completed",
+            "job_id": res.job_id,
             "docx_path": res.docx_path,
             "pdf_path": res.pdf_path,
             "cost_usd": res.cost_usd,
-            "download_url": f"/api/v1/artifacts/{Path(res.docx_path).name}/dl"
+            "download_url": f"/api/v1/artifacts/{res.job_id}/{Path(res.docx_path).name}/dl"
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -128,11 +127,12 @@ def generate_presentation(req: PresentationGenerateRequest):
         )
         return {
             "status": "completed",
+            "job_id": res.job_id,
             "pptx_path": res.pptx_path,
             "slide_count": res.slide_count,
             "slides": res.slides,
             "cost_usd": res.cost_usd,
-            "download_url": f"/api/v1/artifacts/{Path(res.pptx_path).name}/dl"
+            "download_url": f"/api/v1/artifacts/{res.job_id}/{Path(res.pptx_path).name}/dl"
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -152,13 +152,14 @@ def generate_image(req: ImageGenerateRequest):
         )
         return {
             "status": "completed",
+            "job_id": res.job_id,
             "file_path": res.file_path,
             "mime_type": res.mime_type,
             "width": res.width,
             "height": res.height,
             "is_vector": res.is_vector,
             "cost_usd": res.cost_usd,
-            "download_url": f"/api/v1/artifacts/{Path(res.file_path).name}/dl"
+            "download_url": f"/api/v1/artifacts/{res.job_id}/{Path(res.file_path).name}/dl"
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -176,11 +177,12 @@ def generate_handwriting(req: HandwritingGenerateRequest):
         )
         return {
             "status": "completed",
+            "job_id": res.job_id,
             "file_path": res.file_path,
             "page_count": res.page_count,
             "transparent_mode": res.transparent_mode,
             "print_instructions": res.print_instructions,
-            "download_url": f"/api/v1/artifacts/{Path(res.file_path).name}/dl"
+            "download_url": f"/api/v1/artifacts/{res.job_id}/{Path(res.file_path).name}/dl"
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -188,7 +190,7 @@ def generate_handwriting(req: HandwritingGenerateRequest):
 
 @router.get("/jobs/{job_id}")
 def get_job_status(job_id: str):
-    """Retrieves asynchronous task status and progress."""
+    """Retrieves persisted task status, artifacts, and isolated telemetry."""
     rec = client.jobs.get(job_id)
     if not rec:
         raise HTTPException(status_code=404, detail="Job not found")
@@ -199,16 +201,39 @@ def get_job_status(job_id: str):
         "progress": rec.progress_percentage,
         "current_step": rec.current_step,
         "artifacts": rec.artifacts,
-        "telemetry": cost_tracker.get_aggregate_cost()
+        "telemetry": rec.telemetry or client.jobs.get_cost(job_id)
     }
+
+
+@router.get("/artifacts/{job_id}/{filename}/dl")
+def download_job_artifact(job_id: str, filename: str):
+    """Securely downloads an artifact belonging to a specific generation job."""
+    rec = client.jobs.get(job_id)
+    if rec and rec.metadata.get("run_dir"):
+        run_dir = Path(rec.metadata["run_dir"])
+        candidate = run_dir / Path(filename).name
+        if candidate.exists():
+            PathGuard.validate_path(candidate, settings.OUTPUT_DIR)
+            return FileResponse(path=str(candidate), filename=candidate.name)
+
+    raise HTTPException(status_code=404, detail="Job artifact not found")
 
 
 @router.get("/artifacts/{filename}/dl")
 def download_artifact(filename: str):
-    """Securely downloads generated DOCX, PPTX, PDF, or image files."""
-    file_path = settings.OUTPUT_DIR / filename
-    if not file_path.exists():
-        raise HTTPException(status_code=404, detail="Artifact not found")
+    """Legacy flat download route securely searching under settings.OUTPUT_DIR."""
+    safe_name = Path(filename).name
+    direct = settings.OUTPUT_DIR / safe_name
+    if direct.exists():
+        PathGuard.validate_path(direct, settings.OUTPUT_DIR)
+        return FileResponse(path=str(direct), filename=safe_name)
 
-    PathGuard.validate_path(file_path, settings.OUTPUT_DIR)
-    return FileResponse(path=str(file_path), filename=filename)
+    # Also locate inside nested engine/job run directories safely
+    if settings.OUTPUT_DIR.exists():
+        matches = list(settings.OUTPUT_DIR.rglob(safe_name))
+        if matches:
+            target = matches[0]
+            PathGuard.validate_path(target, settings.OUTPUT_DIR)
+            return FileResponse(path=str(target), filename=safe_name)
+
+    raise HTTPException(status_code=404, detail="Artifact not found")

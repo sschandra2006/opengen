@@ -25,33 +25,44 @@ class AutoCorrector:
         template_page_count: int,
         max_iterations: int = 3
     ) -> Tuple[FormattingValidationReport, str]:
-        # Initial render & inspection
-        DocumentRenderer.convert_docx_to_pdf(docx_path, pdf_path)
-        report = VisualInspector.inspect(pdf_path, template_page_count=template_page_count, iteration=1)
+        import shutil
+        import tempfile
+        from pathlib import Path
 
-        if report.is_valid:
-            logger.info("Visual validation passed on first iteration without corrections.")
-            return report, pdf_path
+        Path(pdf_path).parent.mkdir(parents=True, exist_ok=True)
 
-        # Iterative auto-correction loop
-        for iteration in range(1, max_iterations + 1):
-            logger.info(f"Auto-correction iteration {iteration}/{max_iterations} for {docx_path}")
-            corrections = cls._apply_docx_corrections(docx_path, report, iteration)
-            report.corrections_applied.extend(corrections)
+        # Stage in isolated temporary workspace during iterations to protect output on failure
+        with tempfile.TemporaryDirectory(prefix="opengen_heal_") as tmp_dir:
+            staged_docx = Path(tmp_dir) / "working.docx"
+            shutil.copy2(docx_path, staged_docx)
 
-            # Re-render
-            DocumentRenderer.convert_docx_to_pdf(docx_path, pdf_path)
-            # Re-inspect
-            report = VisualInspector.inspect(pdf_path, template_page_count=template_page_count, iteration=iteration + 1)
-            report.corrections_applied = corrections
+            # Initial render & inspection
+            DocumentRenderer.convert_docx_to_pdf(str(staged_docx), pdf_path)
+            report = VisualInspector.inspect(pdf_path, template_page_count=template_page_count, iteration=1)
 
             if report.is_valid:
-                logger.info(f"Auto-correction succeeded at iteration {iteration}.")
-                report.status = "auto_corrected"
+                logger.info("Visual validation passed on first iteration without corrections.")
                 return report, pdf_path
 
-        logger.warning(f"Auto-correction reached max iterations ({max_iterations}). Remaining issues documented in report.")
-        return report, pdf_path
+            # Iterative auto-correction loop
+            for iteration in range(1, max_iterations + 1):
+                logger.info(f"Auto-correction iteration {iteration}/{max_iterations} for {docx_path}")
+                corrections = cls._apply_docx_corrections(str(staged_docx), report, iteration)
+                report.corrections_applied.extend(corrections)
+
+                DocumentRenderer.convert_docx_to_pdf(str(staged_docx), pdf_path)
+                report = VisualInspector.inspect(pdf_path, template_page_count=template_page_count, iteration=iteration + 1)
+                report.corrections_applied = corrections
+
+                if report.is_valid:
+                    logger.info(f"Auto-correction succeeded at iteration {iteration}.")
+                    report.status = "auto_corrected"
+                    shutil.copy2(str(staged_docx), docx_path)
+                    return report, pdf_path
+
+            logger.warning(f"Auto-correction reached max iterations ({max_iterations}). Remaining issues documented in report.")
+            shutil.copy2(str(staged_docx), docx_path)
+            return report, pdf_path
 
     @classmethod
     def _apply_docx_corrections(cls, docx_path: str, report: FormattingValidationReport, iteration: int) -> list:

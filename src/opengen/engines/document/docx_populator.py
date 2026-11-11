@@ -30,65 +30,72 @@ class DocxPopulator:
         template_profile: TemplateProfile,
         instruction: Optional[str] = None
     ) -> str:
-        # 1. Guarantee source document preservation
-        shutil.copy2(template_path, output_path)
+        import tempfile
 
-        doc = docx.Document(output_path)
+        src = Path(template_path).resolve()
+        dst = Path(output_path).resolve()
+        dst.parent.mkdir(parents=True, exist_ok=True)
 
-        # Build replacement dictionaries:
-        replacements: Dict[str, str] = {}
-        for placeholder in template_profile.placeholders:
-            field_name = placeholder.field_name
-            if field_name in mapping_report.mappings:
-                val = str(mapping_report.mappings[field_name].mapped_value)
-                replacements[placeholder.raw_key] = val
-                replacements[f"{{{{{field_name}}}}}"] = val
-                replacements[f"[{field_name}]"] = val
-                replacements[f"<{field_name}>"] = val
-                replacements[f"{{{field_name}}}"] = val
+        # 1. Stage inside an isolated temporary folder so failed runs never corrupt sources or outputs
+        with tempfile.TemporaryDirectory(prefix="opengen_docx_") as tmp_dir:
+            staged_path = Path(tmp_dir) / "staged.docx"
+            shutil.copy2(str(src), str(staged_path))
 
-        # Also add any direct mappings
-        for k, m in mapping_report.mappings.items():
-            val = str(m.mapped_value)
-            replacements[f"{{{{{k}}}}}"] = val
-            replacements[f"[{k}]"] = val
-            replacements[f"<{k}>"] = val
-            replacements[f"{{{k}}}"] = val
+            doc = docx.Document(str(staged_path))
 
-        # 2. Replace placeholders in Body Paragraphs
-        for p in doc.paragraphs:
-            cls._replace_placeholders_in_paragraph(p, replacements)
+            # Build replacement dictionaries:
+            replacements: Dict[str, str] = {}
+            for placeholder in template_profile.placeholders:
+                field_name = placeholder.field_name
+                if field_name in mapping_report.mappings:
+                    val = str(mapping_report.mappings[field_name].mapped_value)
+                    replacements[placeholder.raw_key] = val
+                    replacements[f"{{{{{field_name}}}}}"] = val
+                    replacements[f"[{field_name}]"] = val
+                    replacements[f"<{field_name}>"] = val
+                    replacements[f"{{{field_name}}}"] = val
 
-        # 3. Replace placeholders & populate mapped tables
-        for t_idx, table in enumerate(doc.tables):
-            # Check cell placeholders
-            for row in table.rows:
-                for cell in row.cells:
-                    for p in cell.paragraphs:
-                        cls._replace_placeholders_in_paragraph(p, replacements)
+            # Also add any direct mappings
+            for k, m in mapping_report.mappings.items():
+                val = str(m.mapped_value)
+                replacements[f"{{{{{k}}}}}"] = val
+                replacements[f"[{k}]"] = val
+                replacements[f"<{k}>"] = val
+                replacements[f"{{{k}}}"] = val
 
-            # Check if this table has table mappings
-            for t_map in mapping_report.table_mappings:
-                if t_map.template_table_index == t_idx + 1 and t_map.rows_data:
-                    cls._populate_table_rows(table, t_map.rows_data)
+            # 2. Replace placeholders in Body Paragraphs
+            for p in doc.paragraphs:
+                cls._replace_placeholders_in_paragraph(p, replacements)
 
-            # Enforce cantSplit and tblHeader
-            TableBuilder.apply_advanced_properties(table)
+            # 3. Replace placeholders & populate mapped tables
+            for t_idx, table in enumerate(doc.tables):
+                for row in table.rows:
+                    for cell in row.cells:
+                        for p in cell.paragraphs:
+                            cls._replace_placeholders_in_paragraph(p, replacements)
 
-        # 4. Replace in Headers and Footers
-        for section in doc.sections:
-            for hp in section.header.paragraphs:
-                cls._replace_placeholders_in_paragraph(hp, replacements)
-            for fp in section.footer.paragraphs:
-                cls._replace_placeholders_in_paragraph(fp, replacements)
+                for t_map in mapping_report.table_mappings:
+                    if t_map.template_table_index == t_idx + 1 and t_map.rows_data:
+                        cls._populate_table_rows(table, t_map.rows_data)
 
-        # 5. Non-placeholder insertion fallback if document is completely blank of tags
-        if not template_profile.placeholders and mapping_report.mappings:
-            cls._insert_non_placeholder_content(doc, mapping_report)
+                TableBuilder.apply_advanced_properties(table)
 
-        doc.save(output_path)
-        logger.info(f"DOCX template populated successfully: {output_path}")
-        return output_path
+            # 4. Replace in Headers and Footers
+            for section in doc.sections:
+                for hp in section.header.paragraphs:
+                    cls._replace_placeholders_in_paragraph(hp, replacements)
+                for fp in section.footer.paragraphs:
+                    cls._replace_placeholders_in_paragraph(fp, replacements)
+
+            # 5. Non-placeholder insertion fallback if document is completely blank of tags
+            if not template_profile.placeholders and mapping_report.mappings:
+                cls._insert_non_placeholder_content(doc, mapping_report)
+
+            doc.save(str(staged_path))
+            shutil.copy2(str(staged_path), str(dst))
+
+        logger.info(f"DOCX template populated successfully: {dst}")
+        return str(dst)
 
     @classmethod
     def _replace_placeholders_in_paragraph(cls, paragraph: docx.text.paragraph.Paragraph, replacements: Dict[str, str]):
