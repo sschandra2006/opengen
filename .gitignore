@@ -3,6 +3,13 @@ __pycache__/
 *$py.class
 .pytest_cache/
 .env
-.ai-document-memory/uploads/*
-.ai-document-memory/generation_history/*
-.ai-document-memory/metadata.db
+.ai-document-memory/
+cache/
+data/
+outputs/
+uploads/
+*.egg-info/
+build/
+dist/
+.coverage
+htmlcov/
