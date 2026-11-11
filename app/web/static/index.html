@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Document Generation Engine</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="app-header">
+        <div class="header-content">
+            <div class="logo-area">
+                <div class="logo-icon">DOCX</div>
+                <div>
+                    <h1>AI Document Generation Engine</h1>
+                    <p class="subtitle">Intelligent PDF Analysis + Word Template Preservation + Automated DOCX Generation</p>
+                </div>
+            </div>
+            <div class="header-badges">
+                <span class="badge badge-success">Local Ollama Qwen3:8B Ready</span>
+                <span class="badge badge-info">Gemini Flash Ready</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- Input Configuration Section -->
+        <div class="grid-2col">
+            <!-- Left: Template & Reference Uploads -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>1. Formatting Template</h2>
+                    <span class="badge badge-primary">DOCX or PDF</span>
+                </div>
+                <div class="card-body">
+                    <p class="description">Upload the existing Word template (.docx) to preserve its original layout, or a PDF template to reconstruct.</p>
+                    <div class="dropzone" id="template-dropzone">
+                        <input type="file" id="template-file-input" accept=".docx,.pdf" style="display:none">
+                        <div class="dropzone-content" id="template-prompt">
+                            <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                            <p><strong>Click to browse</strong> or drag & drop template here</p>
+                            <span class="file-hint">Supports .docx and .pdf up to 50MB</span>
+                        </div>
+                        <div class="file-chip" id="template-chip" style="display:none">
+                            <span class="chip-name" id="template-name"></span>
+                            <span class="chip-size" id="template-size"></span>
+                            <button type="button" class="btn-icon" id="remove-template">&times;</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-header" style="margin-top: 1.5rem;">
+                    <h2>2. Reference Document(s)</h2>
+                    <span class="badge badge-primary">PDF / Images / TXT</span>
+                </div>
+                <div class="card-body">
+                    <p class="description">Upload reference PDFs containing the factual information (grades, figures, certificates, records).</p>
+                    <div class="dropzone" id="reference-dropzone">
+                        <input type="file" id="reference-file-input" accept=".pdf,.txt,.png,.jpg,.jpeg" multiple style="display:none">
+                        <div class="dropzone-content">
+                            <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                            <p><strong>Click to add reference documents</strong> (Multiple allowed)</p>
+                            <span class="file-hint">Local extraction handles tables, text, and OCR without cloud leaks</span>
+                        </div>
+                    </div>
+                    <div class="file-list" id="reference-file-list"></div>
+                </div>
+            </div>
+
+            <!-- Right: Instructions & Settings -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>3. Additional Guidance & Instructions</h2>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label for="instruction-input">Custom Instruction (Optional)</label>
+                        <input type="text" id="instruction-input" class="form-control" placeholder="e.g. Populate academic transcript for Fall 2024 semester only">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="additional-text">Additional User Information (Optional)</label>
+                        <textarea id="additional-text" class="form-control" rows="5" placeholder="Key: Value pairs or notes. For example:&#10;Advisor Name: Dr. Robert Miller&#10;Honors: Magna Cum Laude"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="output-format">Desired Output Format</label>
+                        <select id="output-format" class="form-control">
+                            <option value="docx" selected>Editable Word Document (.docx) [Recommended]</option>
+                            <option value="pdf">Rendered PDF (.pdf)</option>
+                            <option value="both">Both (.docx and .pdf)</option>
+                        </select>
+                    </div>
+
+                    <div class="action-bar">
+                        <button type="button" class="btn btn-primary btn-large" id="btn-start-generation">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="btn-icon-svg"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                            Start Generation
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Processing Progress Card -->
+        <div class="card" id="progress-card" style="display:none; margin-top: 1.5rem;">
+            <div class="card-header">
+                <h2>Generation Pipeline Progress</h2>
+                <span class="status-indicator" id="progress-status-badge">Processing</span>
+            </div>
+            <div class="card-body">
+                <div class="progress-bar-container">
+                    <div class="progress-bar-fill" id="progress-bar-fill" style="width: 0%"></div>
+                </div>
+                <div class="stages-timeline">
+                    <div class="stage-step" id="stage-uploading"><div class="circle">1</div><span>Upload</span></div>
+                    <div class="stage-step" id="stage-analysing_template"><div class="circle">2</div><span>Template Analysis</span></div>
+                    <div class="stage-step" id="stage-reading_references"><div class="circle">3</div><span>Reference Reading</span></div>
+                    <div class="stage-step" id="stage-mapping_info"><div class="circle">4</div><span>Information Mapping</span></div>
+                    <div class="stage-step" id="stage-generating_docx"><div class="circle">5</div><span>DOCX Generation</span></div>
+                    <div class="stage-step" id="stage-checking_formatting"><div class="circle">6</div><span>Visual Validation</span></div>
+                    <div class="stage-step" id="stage-completed"><div class="circle">7</div><span>Finalizing</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Clarification Dialog Modal -->
+        <div class="modal-overlay" id="clarification-modal" style="display:none">
+            <div class="modal-card">
+                <div class="modal-header">
+                    <h3>Action Required: Resolve Missing or Conflicting Information</h3>
+                </div>
+                <div class="modal-body">
+                    <p class="modal-notice">The engine never invents sensitive facts (names, grades, dates, financial figures). Please provide or confirm the following values to continue:</p>
+                    <div id="clarification-form-fields"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" id="btn-submit-clarifications">Submit & Continue Generation</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Dashboard -->
+        <div class="card" id="results-card" style="display:none; margin-top: 1.5rem;">
+            <div class="card-header">
+                <h2>Generation Complete</h2>
+                <div class="download-group">
+                    <a href="#" class="btn btn-success" id="btn-download-docx" download>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="btn-icon-svg"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        Download Editable DOCX
+                    </a>
+                    <a href="#" class="btn btn-outline" id="btn-download-pdf" download>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="btn-icon-svg"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                        Download Rendered PDF
+                    </a>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- Tabs navigation -->
+                <div class="tabs">
+                    <button class="tab-btn active" data-tab="tab-mapping">Information Mapping</button>
+                    <button class="tab-btn" data-tab="tab-validation">Visual Quality Report</button>
+                    <button class="tab-btn" data-tab="tab-tokens">Token Optimization Telemetry</button>
+                    <button class="tab-btn" data-tab="tab-template">Template Profile</button>
+                </div>
+
+                <!-- Tab 1: Mapping -->
+                <div class="tab-pane active" id="tab-mapping">
+                    <div class="table-container">
+                        <table class="data-table" id="mapping-table">
+                            <thead>
+                                <tr>
+                                    <th>Template Field</th>
+                                    <th>Mapped Value</th>
+                                    <th>Source Document</th>
+                                    <th>Page</th>
+                                    <th>Confidence</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Tab 2: Visual Validation -->
+                <div class="tab-pane" id="tab-validation">
+                    <div id="validation-report-content"></div>
+                </div>
+
+                <!-- Tab 3: Tokens -->
+                <div class="tab-pane" id="tab-tokens">
+                    <div class="stats-grid" id="token-stats-grid"></div>
+                </div>
+
+                <!-- Tab 4: Template Profile -->
+                <div class="tab-pane" id="tab-template">
+                    <pre class="json-code" id="template-profile-code"></pre>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
