@@ -28,6 +28,12 @@ class ImageEngine:
         self.recraft_adapter = RecraftVectorAdapter()
 
     def generate_image(self, request: ImageRequest, output_dir: Optional[Path] = None) -> ImageResponse:
+        # 0. Prompt policy & moderation pre-check
+        if not request.prompt or not request.prompt.strip():
+            raise ValueError("Image generation prompt cannot be empty.")
+        if len(request.prompt) > 4000:
+            raise ValueError("Image generation prompt exceeds maximum length of 4000 characters.")
+
         out_dir = output_dir or settings.OUTPUT_DIR
         out_dir.mkdir(parents=True, exist_ok=True)
 

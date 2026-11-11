@@ -1,0 +1,58 @@
+version: "3.9"
+
+services:
+  opengen-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: opengen:latest
+    container_name: opengen-api
+    ports:
+      - "8000:8000"
+    environment:
+      - OPENGEN_QUEUE_BACKEND=redis
+      - OPENGEN_REDIS_URL=redis://redis:6379/0
+      - OPENGEN_CACHE_DIR=/app/cache
+      - OPENGEN_OUTPUT_DIR=/app/data/outputs
+      - OPENGEN_UPLOAD_DIR=/app/data/uploads
+    env_file:
+      - .env
+    volumes:
+      - opengen_data:/app/data
+      - opengen_cache:/app/cache
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  opengen-worker:
+    image: opengen:latest
+    container_name: opengen-worker
+    command: ["opengen", "worker", "--threads", "4"]
+    environment:
+      - OPENGEN_QUEUE_BACKEND=redis
+      - OPENGEN_REDIS_URL=redis://redis:6379/0
+      - OPENGEN_CACHE_DIR=/app/cache
+      - OPENGEN_OUTPUT_DIR=/app/data/outputs
+      - OPENGEN_UPLOAD_DIR=/app/data/uploads
+    env_file:
+      - .env
+    volumes:
+      - opengen_data:/app/data
+      - opengen_cache:/app/cache
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: opengen-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+
+volumes:
+  opengen_data:
+  opengen_cache:
+  redis_data:
