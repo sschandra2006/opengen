@@ -14,6 +14,8 @@ from opengen.config import settings
 from opengen.domain.image import ImageRequest, ImageResponse
 from opengen.engines.image.cache import ImageCache
 from opengen.engines.image.compositor import ImageCompositor
+from opengen.engines.image.optical_director import OpticalPromptDirector
+from opengen.engines.image.shadow_synthesizer import StudioShadowSynthesizer
 from opengen.engines.image.providers.together_flux import TogetherFluxAdapter
 from opengen.engines.image.providers.openai_dalle import OpenAIDalleAdapter
 from opengen.engines.image.providers.recraft_vector import RecraftVectorAdapter
@@ -35,6 +37,18 @@ class ImageEngine:
             raise ValueError("Image generation prompt cannot be empty.")
         if len(request.prompt) > 4000:
             raise ValueError("Image generation prompt exceeds maximum length of 4000 characters.")
+
+        # Expand prompt with camera optics & lighting physics to banish AI plastic sheen
+        if request.apply_optical_physics and request.style in ["photorealistic", "realistic"]:
+            from opengen.brand.store import brand_kit_store
+            brand = brand_kit_store.get_brand(request.brand_id) if request.brand_id else None
+            if not request.prompt.startswith("Commercial photography of"):
+                request.prompt = OpticalPromptDirector.expand_prompt(
+                    raw_prompt=request.prompt,
+                    style=request.style,
+                    reserve_negative_space=request.reserve_negative_space,
+                    brand=brand
+                )
 
         if output_dir is not None:
             out_dir = Path(output_dir)
@@ -134,6 +148,23 @@ class ImageEngine:
             model_used=target_provider,
             cost_usd=cost,
             is_vector=is_vec
+        )
+
+    def composite_product_shadow(
+        self,
+        product_png_path: str,
+        background_jpg_path: str,
+        output_path: str,
+        light_angle_deg: float = 45.0,
+        shadow_intensity: float = 0.65
+    ) -> str:
+        """Synthesizes dual-pass contact shadow beneath product cutout over background."""
+        return StudioShadowSynthesizer.composite_product_with_contact_shadow(
+            product_png_path=product_png_path,
+            background_jpg_path=background_jpg_path,
+            output_path=output_path,
+            light_angle_deg=light_angle_deg,
+            shadow_intensity=shadow_intensity
         )
 
 

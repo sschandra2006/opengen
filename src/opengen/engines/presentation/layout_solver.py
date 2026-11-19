@@ -96,9 +96,51 @@ class CoordinateLayoutSolver:
             boxes.append(BoxGeometry(x_in=cls.MARGIN_LEFT_IN, y_in=y_start, w_in=w_card, h_in=h, recommended_font_pt=14.0))
             boxes.append(BoxGeometry(x_in=cls.MARGIN_LEFT_IN + w_card + 0.5, y_in=y_start, w_in=w_chart, h_in=h, recommended_font_pt=12.0))
 
+        elif layout_type in ["bento_grid", "stat_card_grid", "comparison_matrix", "roadmap_timeline"]:
+            # 12-column responsive grid layout
+            if card_count == 2:
+                spans = [6, 6]
+            elif card_count == 3:
+                spans = [4, 4, 4]
+            elif card_count == 4:
+                spans = [3, 3, 3, 3]
+            else:
+                spans = [12 // max(1, card_count)] * card_count
+            return cls.solve_12col_bento_geometry(spans, y_start=y_start, h_card=cls.AVAILABLE_HEIGHT_IN - 0.7)
+
         else:
             # Fallback to single card
             boxes.append(BoxGeometry(x_in=cls.MARGIN_LEFT_IN, y_in=y_start, w_in=cls.AVAILABLE_WIDTH_IN, h_in=4.2))
+
+        return boxes
+
+    @classmethod
+    def solve_12col_bento_geometry(
+        cls,
+        col_spans: List[int],
+        y_start: float = 2.1,
+        h_card: float = 4.5,
+        gap: float = 0.35
+    ) -> List[BoxGeometry]:
+        """
+        Solves exact X, Y, Width, Height for cards according to a 12-column grid.
+        Total available width is divided into 12 proportional columns.
+        """
+        total_gaps = 11 * gap
+        col_unit = (cls.AVAILABLE_WIDTH_IN - total_gaps) / 12.0
+        boxes = []
+        cur_x = cls.MARGIN_LEFT_IN
+
+        for span in col_spans:
+            w = (span * col_unit) + ((span - 1) * gap)
+            boxes.append(BoxGeometry(
+                x_in=cur_x,
+                y_in=y_start,
+                w_in=w,
+                h_in=h_card,
+                recommended_font_pt=14.0 if span >= 4 else 12.0
+            ))
+            cur_x += w + gap
 
         return boxes
 

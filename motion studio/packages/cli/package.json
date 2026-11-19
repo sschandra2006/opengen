@@ -1,0 +1,16 @@
+{
+  "name": "@opengen/cli",
+  "version": "1.0.0",
+  "description": "Standalone CLI and OpenGen Engine 5 Adapter for Motion Graphics Studio",
+  "bin": {
+    "motion": "src/index.ts"
+  },
+  "main": "src/index.ts",
+  "type": "module",
+  "dependencies": {
+    "@opengen/core": "workspace:*",
+    "@opengen/engine-hyperframes": "workspace:*",
+    "@opengen/engine-pdoom": "workspace:*",
+    "@opengen/renderer": "workspace:*"
+  }
+}

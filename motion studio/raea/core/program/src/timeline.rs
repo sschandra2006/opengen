@@ -1,0 +1,194 @@
+//! The timeline: every frame of an edit evaluated once, shared by everything that reads frames (the render, the
+//! sound's lanes, frame digests). Each frame keeps only the columns that differ from the base, and is a pure function
+//! of the edit, so any frame can be read in any order.
+
+use std::collections::HashMap;
+
+use crate::eval::{self, Col, Cols, Tup};
+use crate::ir::{Program, V};
+
+pub struct Timeline {
+    pub frames: i64,
+    pub base: Cols,
+    /// per frame: the columns whose values differ from the base (whole columns); a frame no key changes from the one
+    /// before shares that frame's (#77)
+    written: Vec<std::sync::Arc<HashMap<String, std::sync::Arc<Col>>>>,
+    /// per row: true when no frame changes any of its values from the base, so a system that applies a row's values
+    /// to the World each frame can apply a still row's once
+    still: Vec<bool>,
+    /// per row: the columns some frame changes from the base (none for a still row), so a system can read only those
+    /// once it has applied the rest (FrameRows::moves_only)
+    moving: Vec<Vec<String>>,
+}
+
+impl Timeline {
+    pub fn new(prog: &Program, rows: &[Tup]) -> Result<Timeline, String> {
+        Timeline::from_cols(prog, Cols::from_tups(rows))
+    }
+
+    pub fn from_cols(prog: &Program, base: Cols) -> Result<Timeline, String> {
+        let frames = prog.frames.max(0);
+        // only the frames some key changes from the frame before are evaluated: a still at frame 2448 of a scene keyed
+        // on every frame held its frames before as copies of one, and evaluated and kept all 2449 (#77: 234 s, 7.1 GB)
+        let fresh: Vec<i64> = changes(prog, frames).into_iter().enumerate().filter(|(_, c)| *c).map(|(f, _)| f as i64).collect();
+        let per: Vec<(HashMap<String, std::sync::Arc<Col>>, Vec<(usize, String)>)> = parallel(fresh.len(), |i| {
+            let raw = eval::frame_cols(prog, &base, fresh[i]);
+            let w: HashMap<String, std::sync::Arc<Col>> = raw.cols.into_iter().filter(|(c, v)| base.cols.get(c) != Some(v)).collect();
+            // the rows this frame moves and by which columns: a written column's value differing from the base's there
+            let moved = w.iter().flat_map(|(c, col)| (0..base.len()).filter(|r| !col.same_at(base.cols.get(c).map(|b| &**b), *r)).map(move |r| (r, c.clone()))).collect();
+            Ok((w, moved))
+        })?;
+        let mut still = vec![true; base.len()];
+        let mut moving: Vec<Vec<String>> = vec![Vec::new(); base.len()];
+        let evaluated: Vec<std::sync::Arc<HashMap<String, std::sync::Arc<Col>>>> = per.into_iter().map(|(w, moved)| {
+            for (r, c) in moved {
+                still[r] = false;
+                if !moving[r].contains(&c) {
+                    moving[r].push(c);
+                }
+            }
+            std::sync::Arc::new(w)
+        }).collect();
+        let written = (0..frames).map(|f| evaluated[fresh.partition_point(|&e| e <= f) - 1].clone()).collect();
+        Ok(Timeline { frames, base, written, still, moving })
+    }
+
+    /// Whether row r's value of any of `cols` differs from its base on some frame (it moves over the edit).
+    pub fn moves(&self, r: usize, cols: &[&str]) -> bool {
+        self.written.iter().any(|w| cols.iter().any(|c| w.get(*c).is_some_and(|col| col.get(r) != self.base.get(r, c))))
+    }
+
+    /// The columns some frame changes row r's value of (none for a still row or one out of range).
+    pub fn moving(&self, r: usize) -> &[String] {
+        self.moving.get(r).map_or(&[], Vec::as_slice)
+    }
+
+    /// Whether row r's values are the same on every frame (out of range: false).
+    pub fn still(&self, r: usize) -> bool {
+        self.still.get(r).copied().unwrap_or(false)
+    }
+
+    /// One frame as columns.
+    pub fn cols(&self, f: i64) -> Cols {
+        let mut c = self.base.clone();
+        if let Some(w) = self.written.get(f as usize) {
+            for (k, v) in w.iter() {
+                c.cols.insert(k.clone(), v.clone());
+            }
+        }
+        c
+    }
+
+    /// One frame as rows.
+    pub fn tups(&self, f: i64) -> Vec<Tup> {
+        self.cols(f).to_tups()
+    }
+
+    /// One value at frame f (None: the row doesn't have it).
+    pub fn get(&self, f: i64, r: usize, c: &str) -> Option<V> {
+        match self.written.get(f as usize).and_then(|w| w.get(c)) {
+            Some(col) => col.get(r),
+            None => self.base.get(r, c),
+        }
+    }
+}
+
+/// Per frame: whether some key's value there may differ from the frame before's (frame 0: always). Between two of a
+/// key's points with one value nothing moves, whatever the ease; before its first point and after its last it holds.
+fn changes(prog: &Program, frames: i64) -> Vec<bool> {
+    let mut c = vec![false; frames as usize];
+    if let Some(first) = c.first_mut() {
+        *first = true;
+    }
+    for pts in prog.keys.values() {
+        for w in pts.windows(2) {
+            let ((f0, v0, _), (f1, v1, _)) = (&w[0], &w[1]);
+            if v0 != v1 || v0.is_nan() {
+                for f in (f0 + 1).max(0)..=(*f1).min(frames - 1) {
+                    c[f as usize] = true;
+                }
+            }
+        }
+    }
+    c
+}
+
+/// f(0..n) on every core, in order. A browser build (wasm32) has one thread and can't spawn more: in turn there.
+fn parallel<T: Send>(n: usize, f: impl Fn(usize) -> Result<T, String> + Sync) -> Result<Vec<T>, String> {
+    #[cfg(target_arch = "wasm32")]
+    return (0..n).map(f).collect();
+    #[cfg(not(target_arch = "wasm32"))]
+    parallel_threads(n, f)
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+fn parallel_threads<T: Send>(n: usize, f: impl Fn(usize) -> Result<T, String> + Sync) -> Result<Vec<T>, String> {
+    let cores = std::thread::available_parallelism().map(|c| c.get()).unwrap_or(4).min(n.max(1));
+    let chunk = n.div_ceil(cores.max(1)).max(1);
+    let parts: Vec<Result<Vec<T>, String>> = std::thread::scope(|s| {
+        let hs: Vec<_> = (0..n).step_by(chunk).map(|a| {
+            let f = &f;
+            s.spawn(move || (a..(a + chunk).min(n)).map(f).collect::<Result<Vec<T>, String>>())
+        }).collect();
+        hs.into_iter().map(|h| h.join().expect("a timeline thread panicked")).collect()
+    });
+    let mut out = Vec::with_capacity(n);
+    for p in parts {
+        out.extend(p?);
+    }
+    Ok(out)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn row(id: &str, x: f64) -> Tup {
+        Tup { kind: "mesh".into(), id: id.into(), vals: [("x".to_string(), V::N(x))].into_iter().collect() }
+    }
+
+    #[test]
+    fn a_row_no_frame_changes_is_still_and_a_keyed_one_is_not() {
+        let mut prog = Program { frames: 4, ..Default::default() };
+        prog.keys.insert(("moves".into(), "x".into()), vec![(0, 0.0, "linear".into()), (3, 3.0, "linear".into())]);
+        // a key that holds one value on every frame changes nothing
+        prog.keys.insert(("held".into(), "x".into()), vec![(0, 2.0, "linear".into()), (3, 2.0, "linear".into())]);
+        let t = Timeline::new(&prog, &[row("cube", 1.0), row("moves", 0.0), row("held", 2.0)]).unwrap();
+        assert!(t.still(0));
+        assert!(!t.still(1));
+        assert!(t.still(2));
+        assert!(!t.still(3), "a row past the end is never still");
+        assert_eq!(t.moving(1), ["x".to_string()]);
+        assert!(t.moving(0).is_empty() && t.moving(2).is_empty() && t.moving(3).is_empty());
+    }
+
+    #[test]
+    fn a_frame_shares_its_columns_and_a_value_set_on_it_leaves_the_base_and_other_frames_as_they_were() {
+        let mut prog = Program { frames: 3, ..Default::default() };
+        prog.keys.insert(("moves".into(), "x".into()), vec![(0, 0.0, "linear".into()), (2, 2.0, "linear".into())]);
+        let t = Timeline::new(&prog, &[row("cube", 1.0), row("moves", 0.0)]).unwrap();
+        let (a, mut b) = (t.cols(1), t.cols(1));
+        // a column no frame writes is the base's own, not a copy (100 000 lights' columns were copied each frame)
+        assert!(std::sync::Arc::ptr_eq(&a.cols["x"], &b.cols["x"]) || a.cols["x"] == b.cols["x"]);
+        b.set(0, "x", V::N(9.0));
+        assert_eq!(b.get(0, "x"), Some(V::N(9.0)));
+        assert_eq!(a.get(0, "x"), Some(V::N(1.0)), "a value set on one frame's columns changed another's");
+        assert_eq!(t.cols(1).get(0, "x"), Some(V::N(1.0)), "a value set on a frame's columns changed the timeline");
+        assert_eq!(t.cols(1).get(1, "x"), Some(V::N(1.0)));
+    }
+
+    #[test]
+    fn frames_no_key_changes_read_as_the_frame_before_and_every_frame_matches_its_own_evaluation() {
+        // held at 5 to frame 6, up to 9 by frame 8, held after; a step key, and a key starting before frame 0
+        let mut prog = Program { frames: 12, ..Default::default() };
+        prog.keys.insert(("a".into(), "x".into()), vec![(0, 5.0, "linear".into()), (6, 5.0, "linear".into()), (8, 9.0, "inout".into())]);
+        prog.keys.insert(("b".into(), "x".into()), vec![(-3, 0.0, "linear".into()), (2, 4.0, "step".into())]);
+        let base = Cols::from_tups(&[row("a", 0.0), row("b", 0.0)]);
+        assert_eq!(changes(&prog, 12), [true, true, true, false, false, false, false, true, true, false, false, false]);
+        let t = Timeline::from_cols(&prog, base.clone()).unwrap();
+        for f in 0..12 {
+            assert_eq!(t.cols(f), eval::frame_cols(&prog, &base, f), "frame {f}");
+        }
+        assert!(std::sync::Arc::ptr_eq(&t.written[3], &t.written[6]) && std::sync::Arc::ptr_eq(&t.written[9], &t.written[11]));
+    }
+}

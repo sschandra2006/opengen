@@ -1,0 +1,43 @@
+// <Mix>: how the renderer masters the summed sound of a composition (spec: "The mix"). It draws nothing; it carries
+// the target loudness and the true-peak ceiling for the renderer, and renders what it's written around. One per
+// composition.
+import { useId, type ReactNode } from "react";
+import { useClockState, type ClockState } from "@raea/app/clock";
+
+export interface MixProps {
+  /** integrated loudness the mix is brought to (EBU R128, LUFS) */
+  lufs?: number;
+  /** the limiter's true-peak ceiling (dBTP) */
+  ceiling?: number;
+  /** what it masters, when it's written around the soundtrack (<Mix><Voice /><Bed /></Mix>): rendered as they are */
+  children?: ReactNode;
+}
+
+// Which Mix (by its React id) each rendered composition already has, and on which frame: keyed by the Clock's state
+// (one object across frames, its frame moved on), so each rendered frame starts fresh; the id lets a repeated render
+// of the same Mix through without counting it twice.
+const claimed = new WeakMap<ClockState, { id: string; frame: number }>();
+
+/** The master: every sound in the composition brought to `lufs` integrated loudness (-14) under a true-peak limiter at
+ * `ceiling` dBTP (-1.5), as the platforms play back. Put one in the composition, around the soundtrack or anywhere. */
+export function Mix({ lufs = -14, ceiling = -1.5, children }: MixProps) {
+  const clock = useClockState("Mix");
+  const id = useId();
+  for (const [name, v] of [["lufs", lufs], ["ceiling", ceiling]] as const) {
+    if (typeof v !== "number" || !Number.isFinite(v)) throw new RangeError(`Mix: ${name} must be a finite number, got ${v}`);
+  }
+  if (ceiling > 0) throw new RangeError(`Mix: ceiling is in dBTP and must be at most 0, got ${ceiling}`);
+  const owner = claimed.get(clock);
+  if (owner !== undefined && owner.frame === clock.frame && owner.id !== id) {
+    throw new Error("Mix: a composition has one Mix, and this tree already has one; remove the extra <Mix>");
+  }
+  claimed.set(clock, { id, frame: clock.frame });
+  // its children beside its marker, not inside it: written around the soundtrack, every sound inside was dropped (a
+  // 20 s ad rendered with no audio track, 2026-10-18)
+  return (
+    <>
+      <div data-mix="true" data-lufs={lufs} data-ceiling={ceiling} style={{ display: "none" }} />
+      {children}
+    </>
+  );
+}

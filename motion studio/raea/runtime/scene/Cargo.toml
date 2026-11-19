@@ -1,0 +1,23 @@
+[package]
+name = "raea-runtime-scene"
+version = "0.1.0"
+edition = "2024"
+license = "FSL-1.1-ALv2"
+publish = false
+description = "A composition's 3D as raea-render rows: the camera, lights, meshes, models and pictures, keyed per frame, and live play's row changes"
+
+[dependencies]
+raea-core-scene = { path = "../../core/scene" }
+raea-core-program = { path = "../../core/program" }
+raea-runtime-look = { path = "../look" }
+raea-runtime-scene2d = { path = "../scene2d" }
+bevy = { version = "=0.20.0", default-features = false, features = ["std"] }
+serde_json = "1"
+# a material's `wear` prop as its row's columns
+raea-sys-wear = { path = "../../systems/wear" }
+# a material's `procedural` prop as its row's columns
+raea-sys-procmat = { path = "../../systems/procmat" }
+# a review's fixed camera (RAEA_CAMERA) in place of the scene's own
+raea-core-review = { path = "../../core/review" }
+# a part's layer key from its source stamp (docs/review.feature R2a)
+raea-sys-frame = { path = "../../systems/frame" }

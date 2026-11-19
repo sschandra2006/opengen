@@ -90,63 +90,126 @@ class PresentationBuilder:
             p_sub.font.color.rgb = _hex_to_rgb(theme.text_color)
 
         # 2. Body Cards Geometry
-        card_texts = ["\n".join(c.body_bullets) for c in spec.cards]
-        geometries = CoordinateLayoutSolver.solve_cards_geometry(
-            spec.layout_type, len(spec.cards), card_texts
-        )
+        if spec.bento_cards:
+            spans = [c.col_span for c in spec.bento_cards]
+            geometries = CoordinateLayoutSolver.solve_12col_bento_geometry(spans)
+            for idx, b_card in enumerate(spec.bento_cards):
+                if idx >= len(geometries):
+                    break
+                geo = geometries[idx]
 
-        for idx, card in enumerate(spec.cards):
-            if idx >= len(geometries):
-                break
-            geo = geometries[idx]
+                shape = slide.shapes.add_shape(
+                    MSO_SHAPE.ROUNDED_RECTANGLE,
+                    Inches(geo.x_in), Inches(geo.y_in),
+                    Inches(geo.w_in), Inches(geo.h_in)
+                )
+                shape.fill.solid()
+                shape.fill.fore_color.rgb = _hex_to_rgb(theme.card_background)
+                border_color = b_card.accent_color or theme.accent_color
+                shape.line.color.rgb = _hex_to_rgb(border_color)
+                shape.line.width = Pt(1.5)
 
-            # Native Rounded Rectangle Card Shape
-            shape = slide.shapes.add_shape(
-                MSO_SHAPE.ROUNDED_RECTANGLE,
-                Inches(geo.x_in), Inches(geo.y_in),
-                Inches(geo.w_in), Inches(geo.h_in)
+                ctf = shape.text_frame
+                ctf.word_wrap = True
+                ctf.margin_top = Inches(0.25)
+                ctf.margin_left = Inches(0.25)
+                ctf.margin_right = Inches(0.25)
+                ctf.margin_bottom = Inches(0.25)
+
+                # Giant Metric if present
+                first_p = True
+                if b_card.value:
+                    mp = ctf.paragraphs[0]
+                    first_p = False
+                    mp.text = b_card.value
+                    mp.font.size = Pt(40)
+                    mp.font.bold = True
+                    mp.font.name = theme.font_header
+                    mp.font.color.rgb = _hex_to_rgb(border_color)
+
+                # Title
+                tp = ctf.paragraphs[0] if first_p else ctf.add_paragraph()
+                first_p = False
+                tp.text = b_card.title
+                tp.font.size = Pt(geo.recommended_font_pt + 3)
+                tp.font.bold = True
+                tp.font.name = theme.font_header
+                tp.font.color.rgb = _hex_to_rgb(theme.primary_color)
+
+                # Description
+                if b_card.description:
+                    dp = ctf.add_paragraph()
+                    dp.text = b_card.description
+                    dp.font.size = Pt(geo.recommended_font_pt)
+                    dp.font.name = theme.font_body
+                    dp.font.color.rgb = _hex_to_rgb(theme.text_color)
+
+                # Trend Badge
+                if b_card.trend_badge:
+                    trp = ctf.add_paragraph()
+                    trp.text = b_card.trend_badge
+                    trp.font.size = Pt(11)
+                    trp.font.bold = True
+                    trp.font.color.rgb = _hex_to_rgb("#10B981")
+
+        elif spec.cards:
+            card_texts = ["\n".join(c.body_bullets) for c in spec.cards]
+            geometries = CoordinateLayoutSolver.solve_cards_geometry(
+                spec.layout_type, len(spec.cards), card_texts
             )
-            shape.fill.solid()
-            shape.fill.fore_color.rgb = _hex_to_rgb(theme.card_background)
-            shape.line.color.rgb = _hex_to_rgb("#CBD5E1")
-            shape.line.width = Pt(1)
 
-            ctf = shape.text_frame
-            ctf.word_wrap = True
-            ctf.margin_top = Inches(0.2)
-            ctf.margin_left = Inches(0.2)
-            ctf.margin_right = Inches(0.2)
-            ctf.margin_bottom = Inches(0.2)
+            for idx, card in enumerate(spec.cards):
+                if idx >= len(geometries):
+                    break
+                geo = geometries[idx]
 
-            # Card Title
-            if card.title:
-                cp = ctf.paragraphs[0]
-                cp.text = card.title
-                cp.font.size = Pt(geo.recommended_font_pt + 2)
-                cp.font.bold = True
-                cp.font.name = theme.font_header
-                cp.font.color.rgb = _hex_to_rgb(theme.accent_color)
+                # Native Rounded Rectangle Card Shape
+                shape = slide.shapes.add_shape(
+                    MSO_SHAPE.ROUNDED_RECTANGLE,
+                    Inches(geo.x_in), Inches(geo.y_in),
+                    Inches(geo.w_in), Inches(geo.h_in)
+                )
+                shape.fill.solid()
+                shape.fill.fore_color.rgb = _hex_to_rgb(theme.card_background)
+                shape.line.color.rgb = _hex_to_rgb("#CBD5E1")
+                shape.line.width = Pt(1)
 
-            # Metric Display
-            if card.metric:
-                mp = ctf.add_paragraph() if card.title else ctf.paragraphs[0]
-                mp.text = card.metric.value
-                mp.font.size = Pt(36)
-                mp.font.bold = True
-                mp.font.color.rgb = _hex_to_rgb(theme.accent_color)
+                ctf = shape.text_frame
+                ctf.word_wrap = True
+                ctf.margin_top = Inches(0.2)
+                ctf.margin_left = Inches(0.2)
+                ctf.margin_right = Inches(0.2)
+                ctf.margin_bottom = Inches(0.2)
 
-                lp = ctf.add_paragraph()
-                lp.text = card.metric.label
-                lp.font.size = Pt(13)
-                lp.font.color.rgb = _hex_to_rgb(theme.text_color)
+                # Card Title
+                if card.title:
+                    cp = ctf.paragraphs[0]
+                    cp.text = card.title
+                    cp.font.size = Pt(geo.recommended_font_pt + 2)
+                    cp.font.bold = True
+                    cp.font.name = theme.font_header
+                    cp.font.color.rgb = _hex_to_rgb(theme.accent_color)
 
-            # Body Bullets
-            for b_idx, bullet in enumerate(card.body_bullets):
-                bp = ctf.add_paragraph() if (card.title or card.metric or b_idx > 0) else ctf.paragraphs[0]
-                bp.text = f"•  {bullet}"
-                bp.font.size = Pt(geo.recommended_font_pt)
-                bp.font.name = theme.font_body
-                bp.font.color.rgb = _hex_to_rgb(theme.text_color)
+                # Metric Display
+                if card.metric:
+                    mp = ctf.add_paragraph() if card.title else ctf.paragraphs[0]
+                    mp.text = card.metric.value
+                    mp.font.size = Pt(36)
+                    mp.font.bold = True
+                    mp.font.color.rgb = _hex_to_rgb(theme.accent_color)
+
+                    lp = ctf.add_paragraph()
+                    lp.text = card.metric.label
+                    lp.font.size = Pt(13)
+                    lp.font.color.rgb = _hex_to_rgb(theme.text_color)
+
+                # Body Bullets
+                for b_idx, bullet in enumerate(card.body_bullets):
+                    bp = ctf.add_paragraph() if (card.title or card.metric or b_idx > 0) else ctf.paragraphs[0]
+                    bp.text = f"•  {bullet}"
+                    bp.font.size = Pt(geo.recommended_font_pt)
+                    bp.font.name = theme.font_body
+                    bp.font.color.rgb = _hex_to_rgb(theme.text_color)
 
         # 3. Native Chart
         if spec.chart:

@@ -1,0 +1,11 @@
+{
+  "name": "@opengen/engine-pdoom",
+  "version": "1.0.0",
+  "description": "3D Three.js, Anime.js, and GLSL Shader Animation Engine for OpenGen IR",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "type": "module",
+  "dependencies": {
+    "@opengen/core": "workspace:*"
+  }
+}

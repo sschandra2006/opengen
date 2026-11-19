@@ -1,0 +1,29 @@
+{
+  "name": "opengen-motion-studio",
+  "version": "1.0.0",
+  "description": "OpenGen Motion Graphics Studio: Programmatic, Deterministic Video Generation Engine",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "type": "module",
+  "scripts": {
+    "motion": "bun run packages/cli/src/index.ts",
+    "test": "bun test",
+    "studio": "bun studio/orchestrator.ts"
+  },
+  "keywords": [
+    "video-generator",
+    "motion-graphics",
+    "opengen",
+    "hyperframes",
+    "threejs",
+    "gsap",
+    "ffmpeg"
+  ],
+  "author": "OpenGen AI Team",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "playwright-core": "^1.65.0"
+  }
+}

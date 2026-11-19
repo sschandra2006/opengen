@@ -1,0 +1,24 @@
+# The corpus run.sh runs: one edit per line, repo-relative, or ~/... for the legacy app's eval spaces (untracked agent output that
+# lives only on this Mac; run.sh prints SKIP where it's missing). Footage is never committed: the s2sdk edits read
+# score/bench/out/s2sdk/*/media -> apps/legacy/shell/evals/fixtures/real/media -> engine/media/real (links into ~/.ed/media,
+# ~/Downloads and eval runs), and the eval spaces read their own media/ folders.
+
+# fixtures in git
+sdk/react/bench/timelines/titles/edit.tsx
+sdk/react/bench/games/pong/edit.tsx
+sdk/react/bench/games/platformer/edit.tsx
+sdk/react/bench/games/tones/edit.tsx
+sdk/raea/conformance/golden/01-card-fade/edit.tsx
+sdk/raea/conformance/golden/02-sequence-timing/edit.tsx
+sdk/raea/conformance/golden/04-mesh-sign/edit.tsx
+sdk/raea/conformance/golden/05-world-solid/edit.tsx
+sdk/raea/conformance/golden/06-world-entities/edit.tsx
+# synthetic: a 16:9 deck, a 3D product shot with DOM over it
+sdk/react/bench/corpus/fixtures/deck/edit.tsx
+sdk/react/bench/corpus/fixtures/box3d/edit.tsx
+
+# ad edits on real footage with captions and parts (score's SDK backend from agent-written briefs; export const config)
+
+# the legacy app agents' own TSX (eval spaces): ads with FaceFrame/ScreenFit parts, captions, slides, an app promo
+
+# the legacy app agents' games (and scripted matches)

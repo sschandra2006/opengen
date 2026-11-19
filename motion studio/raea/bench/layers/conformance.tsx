@@ -1,0 +1,56 @@
+// docs/review.feature R2e: every layer kind in one frame, overlapping, so the layer pass is checked against the oracle
+// (hide one layer, render again, the pixels that change) where layers meet: a square drawn as a 3D mesh, as a React
+// component (used twice) and as a page element, text, an image, a video, a rotated element and a .map() list, with a
+// flat Screen (a quad in the 3D) and a skinned character walking (RobotExpressive, CC0). The page is over
+// the 3D, as a composition's always is. bench/layers/oracle.sh renders it.
+import { AbsoluteFill, Composition, Img, Video, registerRoot, staticFile, useCurrentFrame } from "raea";
+import { Model, Screen } from "raea/3d";
+import { StandardMaterial } from "raea/pbr";
+import { Cuboid, Mesh3d } from "raea/mesh";
+import { DirectionalLight } from "raea/light";
+import { Quat, Transform } from "raea/transform";
+import { Camera3d } from "raea/camera";
+import { Badge } from "./badge";
+
+const Shot = () => {
+  const f = useCurrentFrame();
+  return (
+    <AbsoluteFill style={{ background: "#16202e" }}>
+      <Camera3d transform={Transform.fromXyz(0, 0, 6).lookingAt([0, 0, 0])} />
+      <DirectionalLight illuminance={9000} transform={Transform.fromXyz(2, 4, 6).lookingAt([0, 0, 0])} />
+      {/* in front of the moving cube's lower right, and written before it: a pass that draws in order, not by depth,
+          puts the cube over it */}
+      <Mesh3d transform={Transform.fromXyz(-0.1, -0.2, 1.4)}>
+        <Cuboid half_size={[0.35, 0.35, 0.35]} />
+        <StandardMaterial base_color="#3fa7ff" />
+      </Mesh3d>
+      <Mesh3d transform={Transform.fromXyz(-0.6 + f * 0.01, 0.3, 0).withRotation(Quat.fromEuler("XYZ", 0.4, f * 0.02, 0))}>
+        <Cuboid half_size={[0.7, 0.7, 0.7]} />
+        <StandardMaterial base_color="#2fbf71" />
+      </Mesh3d>
+      <Mesh3d transform={Transform.fromXyz(1.4, -1.2, -1)}>
+        <Cuboid half_size={[0.5, 0.5, 0.5]} />
+        <StandardMaterial base_color="#e0a82e" />
+      </Mesh3d>
+      {/* a quad in the 3D showing a page of its own: one layer, the quad (what it shows is drawn off the frame) */}
+      <Screen name="panel" crt={false} resolution={[160, 100]} size={[1.3]} position={[1.7, 1.25, -0.5]} rotation={[0, -0.45, 0]} background="#ffffff">
+        <AbsoluteFill style={{ background: "#d23c3c", color: "#fff", fontSize: 28, padding: 12 }}>screen</AbsoluteFill>
+      </Screen>
+      {/* skinned: its triangles where its joints put them on the frame, not its bind pose */}
+      <Model name="walker" src={staticFile("RobotExpressive.glb")} animation="Walking" position={[-1.5, -2.5, 0.3]} rotation={[0, 0.6, 0]} scale={0.6} />
+      <Badge x={150 + f} y={150} color="#3366ff" />
+      <Badge x={300} y={60} color="#cc3377" />
+      <div style={{ position: "absolute", left: 210, top: 210, width: 90, height: 90, background: "#ff6a00" }} />
+      <h1 style={{ position: "absolute", left: 24, top: 8, margin: 0, color: "#f4f4f4", fontSize: 30 }}>Layers</h1>
+      <Img src="pic.png" style={{ position: "absolute", left: 20, top: 300, width: 96, height: 64 }} />
+      <Video src="clip.mp4" muted style={{ position: "absolute", left: 140, top: 320, width: 120, height: 68 }} />
+      <div style={{ position: "absolute", left: 330, top: 300, width: 80, height: 40, background: "#8a5cf6", transform: `rotate(${20 + f}deg)` }} />
+      <ul style={{ position: "absolute", left: 20, top: 70, margin: 0, padding: 0, listStyle: "none" }}>
+        {["one", "two", "three"].map((t) => (
+          <li key={t} style={{ width: 70, height: 22, marginBottom: 6, background: "#2a3a52", color: "#cfe", fontSize: 14 }}>{t}</li>
+        ))}
+      </ul>
+    </AbsoluteFill>
+  );
+};
+registerRoot(() => <Composition id="layers" component={Shot} width={480} height={400} fps={30} durationInFrames={90} />);

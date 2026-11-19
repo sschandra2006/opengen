@@ -20,7 +20,7 @@ client = OpenGenClient()
 try:
     from mcp.server.fastmcp import FastMCP
     _HAS_FASTMCP = True
-    mcp = FastMCP("OpenGen", description="Self-Hostable AI Document, Presentation, Image & Handwriting Framework")
+    mcp = FastMCP("OpenGen", description="Self-Hostable AI Multi-Modal Generation Framework (Documents, Presentations, Images, Handwriting, Video Ads)")
 except ImportError:
     _HAS_FASTMCP = False
     mcp = None
@@ -225,6 +225,175 @@ def tool_get_generation_cost(job_id: str = "") -> Dict[str, Any]:
     return client.jobs.get_cost(job_id=job_id or None)
 
 
+def tool_register_brand_kit(
+    brand_json: str
+) -> Dict[str, Any]:
+    """Registers a Cross-Studio Brand Kit JSON with color palette, typography, and geometry tokens."""
+    from opengen.domain.brand import BrandKitSpec
+    try:
+        data = json.loads(brand_json) if isinstance(brand_json, str) else brand_json
+        brand = BrandKitSpec.model_validate(data)
+        saved = client.brand_kits.register(brand)
+        return {"status": "success", "brand_id": saved.brandId, "brand_name": saved.brandName}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+def tool_compile_typst_document(
+    report_json: str,
+    brand_id: str = ""
+) -> Dict[str, Any]:
+    """Compiles a publication-grade Swiss Editorial PDF report (<50ms) using Typst."""
+    try:
+        data = json.loads(report_json) if isinstance(report_json, str) else report_json
+        res = client.documents.compile_typst(
+            data=data,
+            brand_id=brand_id or None
+        )
+        return {
+            "status": "completed",
+            "pdf_path": res.pdf_path,
+            "cost_usd": res.cost_usd,
+            "compiler": "typst"
+        }
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+def tool_generate_bento_presentation(
+    topic: str,
+    slide_count: int = 7,
+    brand_id: str = ""
+) -> Dict[str, Any]:
+    """Generates an elite 12-column Bento Grid pitch deck following Sequoia/YC narrative arcs."""
+    try:
+        res = client.presentations.generate_bento(
+            topic=topic,
+            slide_count=slide_count,
+            brand_id=brand_id or None
+        )
+        return {
+            "status": "completed",
+            "pptx_path": res.pptx_path,
+            "slide_count": res.slide_count,
+            "slides": res.slides
+        }
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+def tool_relight_product_image(
+    product_png_path: str,
+    background_jpg_path: str,
+    light_angle_deg: float = 45.0,
+    shadow_intensity: float = 0.65
+) -> Dict[str, Any]:
+    """Synthesizes physics-based dual-pass contact shadow beneath product cutout over background."""
+    try:
+        res = client.images.relight_product(
+            product_png_path=product_png_path,
+            background_jpg_path=background_jpg_path,
+            light_angle_deg=light_angle_deg,
+            shadow_intensity=shadow_intensity
+        )
+        return {
+            "status": "completed",
+            "image_path": res.file_path,
+            "width": res.width,
+            "height": res.height
+        }
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+def tool_generate_motion_ad(
+    brief: str,
+    duration: float = 18.0,
+    aspect_ratio: str = "9:16",
+    brand_id: Optional[str] = None
+) -> Dict[str, Any]:
+    """Generates a high-converting performance video ad (<30s) using Engine 5."""
+    try:
+        res = client.motion.create_ad(
+            brief=brief,
+            duration=duration,
+            aspect_ratio=aspect_ratio,
+            brand_id=brand_id
+        )
+        return {
+            "status": "completed",
+            "job_id": res.job_id,
+            "file_path": res.file_path,
+            "duration": res.duration,
+            "critic_score": res.critic_score,
+            "critic_violations": res.critic_violations
+        }
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+def tool_audit_ad_timeline(project_ir_json: str) -> Dict[str, Any]:
+    """Audits an OpenGen IR project against viral retention metrics (Hook speed, monotony, safe-zones)."""
+    try:
+        data = json.loads(project_ir_json) if isinstance(project_ir_json, str) else project_ir_json
+        from opengen.engines.motion.ad_critic import AdCriticAgent
+        critic = AdCriticAgent()
+        report = critic.audit_ad_timeline(data)
+        return {"status": "completed", "audit": report}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+def tool_reframe_video(
+    input_video_path: str,
+    focal_override_x: Optional[float] = None
+) -> Dict[str, Any]:
+    """Dynamically reframes a landscape video to 9:16 vertical using LERP tracking."""
+    try:
+        out = client.motion.reframe(input_video_path, focal_override_x=focal_override_x)
+        return {"status": "completed", "output_path": out}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+def tool_compile_catalog_typst(
+    products_json: str,
+    title: str = "Artisan Product Catalog & Price Guide",
+    brand_id: str = "",
+    hero_ratio: float = 0.15
+) -> Dict[str, Any]:
+    """Compiles an 80/20 Swiss Editorial product catalog to PDF with Hero Bento Cards and dot-leader menus."""
+    try:
+        products = json.loads(products_json) if isinstance(products_json, str) else products_json
+        if isinstance(products, dict) and "products" in products:
+            products = products["products"]
+        res = client.documents.compile_catalog_typst(
+            products=products,
+            title=title,
+            brand_id=brand_id or None,
+            hero_ratio=hero_ratio
+        )
+        return {
+            "status": "completed",
+            "pdf_path": res.pdf_path
+        }
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+def tool_creative_critic_audit(
+    engine: str,
+    payload_json: str
+) -> Dict[str, Any]:
+    """Audits any project payload across Engines 1 to 5 against the Anti-Mediocrity Doctrine."""
+    try:
+        data = json.loads(payload_json) if isinstance(payload_json, str) else payload_json
+        report = client.critic.audit(engine=engine, payload=data)
+        return {"status": "completed", "report": report}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
 # -------------------------------------------------------------------------
 # Tool Registry Map
 # -------------------------------------------------------------------------
@@ -240,6 +409,15 @@ MCP_TOOLS = {
     "generate_handwriting": tool_generate_handwriting,
     "get_generation_status": tool_get_generation_status,
     "get_generation_cost": tool_get_generation_cost,
+    "register_brand_kit": tool_register_brand_kit,
+    "compile_typst_document": tool_compile_typst_document,
+    "generate_bento_presentation": tool_generate_bento_presentation,
+    "relight_product_image": tool_relight_product_image,
+    "generate_motion_ad": tool_generate_motion_ad,
+    "audit_ad_timeline": tool_audit_ad_timeline,
+    "reframe_video": tool_reframe_video,
+    "compile_catalog_typst": tool_compile_catalog_typst,
+    "creative_critic_audit": tool_creative_critic_audit,
 }
 
 

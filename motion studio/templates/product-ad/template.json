@@ -1,0 +1,115 @@
+{
+  "id": "product-ad",
+  "name": "High-Impact Product Commercial",
+  "category": "Commercial",
+  "supportedAspectRatios": ["9:16", "16:9"],
+  "defaultDuration": 8.0,
+  "variables": {
+    "productName": { "type": "string", "default": "ORIZINE PRINT", "label": "Product Name" },
+    "primaryColor": { "type": "color", "default": "#f97316", "label": "Brand Accent Color" },
+    "hookText": { "type": "string", "default": "Campus Printing, Upgraded", "label": "Hook Headline" },
+    "featureText": { "type": "string", "default": "Drag. Drop. Done. At your gate by 9 AM.", "label": "Feature Description" },
+    "ctaText": { "type": "string", "default": "Order Prints Today", "label": "CTA Text" }
+  },
+  "projectBlueprint": {
+    "schemaVersion": "1.0.0",
+    "projectId": "{{generated_id}}",
+    "title": "{{productName}} Commercial",
+    "settings": {
+      "width": "{{aspect_width}}",
+      "height": "{{aspect_height}}",
+      "fps": 30,
+      "aspectRatio": "{{aspect_ratio}}",
+      "duration": 8.0,
+      "backgroundColor": "#0f0f12"
+    },
+    "scenes": [
+      {
+        "id": "scene_hook",
+        "name": "Hook",
+        "start": 0.0,
+        "duration": 4.0,
+        "backgroundColor": "#0f0f12",
+        "layers": [
+          {
+            "id": "brand_badge",
+            "type": "text",
+            "start": 0.2,
+            "duration": 3.8,
+            "transform": { "y": -320, "opacity": 0 },
+            "content": {
+              "text": "{{productName}}",
+              "fontSize": 34,
+              "color": "{{primaryColor}}",
+              "fontWeight": 900,
+              "letterSpacing": 5
+            },
+            "animations": [
+              { "property": "opacity", "start": 0.2, "duration": 0.4, "from": 0, "to": 1, "easing": "easeOutQuad" },
+              { "property": "y", "start": 0.2, "duration": 0.5, "from": -370, "to": -320, "easing": "easeOutBack" }
+            ]
+          },
+          {
+            "id": "hook_title",
+            "type": "text",
+            "start": 0.5,
+            "duration": 3.5,
+            "transform": { "y": -40, "opacity": 1 },
+            "content": {
+              "text": "{{hookText}}",
+              "fontSize": 64,
+              "color": "#ffffff",
+              "fontWeight": 900,
+              "kineticMode": "word-by-word",
+              "kineticStagger": 0.12
+            }
+          }
+        ]
+      },
+      {
+        "id": "scene_cta",
+        "name": "Call to Action",
+        "start": 4.0,
+        "duration": 4.0,
+        "backgroundColor": "#08080a",
+        "layers": [
+          {
+            "id": "feature_desc",
+            "type": "text",
+            "start": 4.2,
+            "duration": 3.8,
+            "transform": { "y": -100, "opacity": 0 },
+            "content": {
+              "text": "{{featureText}}",
+              "fontSize": 48,
+              "color": "#ffffff",
+              "fontWeight": 800
+            },
+            "animations": [
+              { "property": "opacity", "start": 4.2, "duration": 0.5, "from": 0, "to": 1, "easing": "easeOutQuad" },
+              { "property": "y", "start": 4.2, "duration": 0.6, "from": -60, "to": -100, "easing": "easeOutCubic" }
+            ]
+          },
+          {
+            "id": "cta_button",
+            "type": "text",
+            "start": 4.6,
+            "duration": 3.4,
+            "transform": { "y": 140, "opacity": 0 },
+            "content": {
+              "text": "{{ctaText}}",
+              "fontSize": 42,
+              "color": "{{primaryColor}}",
+              "fontWeight": 900,
+              "letterSpacing": 2
+            },
+            "animations": [
+              { "property": "opacity", "start": 4.6, "duration": 0.4, "from": 0, "to": 1, "easing": "easeOutQuad" },
+              { "property": "scale", "start": 4.6, "duration": 0.6, "from": 0.7, "to": 1.0, "easing": "easeOutBack" }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

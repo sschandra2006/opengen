@@ -1,0 +1,83 @@
+from typing import Dict, Any, List, Optional
+from opengen.ai.providers import AIProviderFactory, BaseAIProvider
+
+class AdCriticAgent:
+    """
+    Autonomous Pre-Flight Ad Quality Gate for OpenGen Engine 5.
+    Evaluates compiled project IRs against social retention metrics *before* rendering.
+    Flags hook sluggishness, visual monotony, duration overruns, and UI safe-zone collisions.
+    """
+    def __init__(self, provider: Optional[BaseAIProvider] = None):
+        self.provider = provider
+
+    def audit_ad_timeline(self, project_ir: Dict[str, Any]) -> Dict[str, Any]:
+        violations: List[str] = []
+        scenes = project_ir.get("scenes", [])
+
+        if not scenes:
+            return {
+                "passed": False,
+                "score": 0,
+                "violations": ["EMPTY_PROJECT: Project contains no scenes."],
+                "suggestedRemedies": ["Add at least 3 scenes complying with the 5-phase conversion funnel."]
+            }
+
+        # 1. Hook Speed Check (0-2s)
+        first_scene = scenes[0]
+        if first_scene.get("duration", 0) > 2.2:
+            violations.append(f"HOOK_TOO_SLOW: Scene 1 duration ({first_scene.get('duration')}s) exceeds 2.2s.")
+
+        first_scene_directives = first_scene.get("creativeAdDirectives", {})
+        has_first_punch = first_scene_directives.get("punchIn", {}).get("enabled", False)
+        has_first_foley = bool(first_scene_directives.get("audioPunctuation", {}).get("foleyCue"))
+        if not has_first_punch and not has_first_foley:
+            violations.append("HOOK_LACKS_INTERRUPT: Scene 1 lacks a pattern interrupt (punch-in or foley cue).")
+
+        # 2. Visual Monotony Check
+        for scene in scenes:
+            dur = scene.get("duration", 0)
+            directives = scene.get("creativeAdDirectives", {})
+            has_punch = directives.get("punchIn", {}).get("enabled", False)
+            if dur > 3.8 and not has_punch:
+                violations.append(f"SCENE_MONOTONY: Scene '{scene.get('id')}' duration ({dur}s) exceeds 3.8s without dynamic punch-in.")
+
+        # 3. Overall Duration Cap (< 30.0s)
+        total_duration = sum(s.get("duration", 0) for s in scenes)
+        if total_duration >= 30.0:
+            violations.append(f"DURATION_OVERRUN: Total duration ({total_duration:.1f}s) exceeds 30.0s ad limit.")
+
+        # 4. Safe-Zone Violations (9:16 mobile UI overlays)
+        settings = project_ir.get("settings", {})
+        if settings.get("aspectRatio") == "9:16":
+            height = settings.get("height", 1920)
+            width = settings.get("width", 1080)
+            for scene in scenes:
+                for layer in scene.get("layers", []):
+                    transform = layer.get("transform", {})
+                    y_pos = transform.get("y", 0)
+                    if y_pos > (height - 240):
+                        violations.append(f"SAFE_ZONE_BREACH: Layer '{layer.get('id')}' in scene '{scene.get('id')}' at y={y_pos} encroaches on TikTok/Reels bottom UI safe margin.")
+
+        passed = len(violations) == 0
+        score = max(0, 100 - (len(violations) * 20))
+
+        remedies = []
+        if not passed:
+            for v in violations:
+                if "HOOK_TOO_SLOW" in v:
+                    remedies.append("Trim opening hook scene to <= 2.0s.")
+                elif "HOOK_LACKS_INTERRUPT" in v:
+                    remedies.append("Inject a 1.25x scale punch-in or 'sub_impact_heavy' SFX at t=0s.")
+                elif "SCENE_MONOTONY" in v:
+                    remedies.append("Divide static scene or add digital punch-in scale tween.")
+                elif "DURATION_OVERRUN" in v:
+                    remedies.append("Accelerate scene pacing to cap total duration under 29.5s.")
+                elif "SAFE_ZONE_BREACH" in v:
+                    remedies.append("Shift bottom layers up by at least 260px from bottom edge.")
+
+        return {
+            "passed": passed,
+            "score": score,
+            "violations": violations,
+            "suggestedRemedies": remedies
+        }

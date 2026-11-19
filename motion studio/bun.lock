@@ -1,0 +1,72 @@
+{
+  "lockfileVersion": 2,
+  "configVersion": 1,
+  "workspaces": {
+    "": {
+      "name": "opengen-motion-studio",
+      "dependencies": {
+        "playwright-core": "^1.65.0",
+      },
+    },
+    "packages/cli": {
+      "name": "@opengen/cli",
+      "version": "1.0.0",
+      "bin": {
+        "motion": "src/index.ts",
+      },
+      "dependencies": {
+        "@opengen/core": "workspace:*",
+        "@opengen/engine-hyperframes": "workspace:*",
+        "@opengen/engine-pdoom": "workspace:*",
+        "@opengen/renderer": "workspace:*",
+      },
+    },
+    "packages/core": {
+      "name": "@opengen/core",
+      "version": "1.0.0",
+      "devDependencies": {
+        "@types/node": "^22.0.0",
+      },
+    },
+    "packages/engine-hyperframes": {
+      "name": "@opengen/engine-hyperframes",
+      "version": "1.0.0",
+      "dependencies": {
+        "@opengen/core": "workspace:*",
+      },
+    },
+    "packages/engine-pdoom": {
+      "name": "@opengen/engine-pdoom",
+      "version": "1.0.0",
+      "dependencies": {
+        "@opengen/core": "workspace:*",
+      },
+    },
+    "packages/renderer": {
+      "name": "@opengen/renderer",
+      "version": "1.0.0",
+      "dependencies": {
+        "@opengen/core": "workspace:*",
+        "@opengen/engine-hyperframes": "workspace:*",
+        "@opengen/engine-pdoom": "workspace:*",
+      },
+    },
+  },
+  "packages": {
+    "@opengen/cli": ["@opengen/cli@workspace:packages/cli"],
+
+    "@opengen/core": ["@opengen/core@workspace:packages/core"],
+
+    "@opengen/engine-hyperframes": ["@opengen/engine-hyperframes@workspace:packages/engine-hyperframes"],
+
+    "@opengen/engine-pdoom": ["@opengen/engine-pdoom@workspace:packages/engine-pdoom"],
+
+    "@opengen/renderer": ["@opengen/renderer@workspace:packages/renderer"],
+
+    "@types/node": ["@types/node@22.20.5", "", { "dependencies": { "undici-types": "~6.21.0" } }, "sha512-U2+DNr+wSjpsTS/wZGYHq7GcwfuSmKiKvoPvK22zwTlRhU91yOniN4qRR5KhIjvif7ysw/dz/hKmfDH0Ris4aA=="],
+
+    "playwright-core": ["playwright-core@1.65.0", "", { "bin": { "playwright-core": "cli.js" } }, "sha512-vNSKgH6YqtN7cdT/L334zo0a+YwkrpicyrHJlWWPIm/Q+Nn2SWInil01oT0mbu96U4GgoRtCYQD9CzJQgju+lA=="],
+
+    "undici-types": ["undici-types@6.21.0", "", {}, "sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ=="],
+  }
+}

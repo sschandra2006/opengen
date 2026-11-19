@@ -26,8 +26,17 @@ def test_mcp_tools_registration():
         "generate_handwriting",
         "get_generation_status",
         "get_generation_cost",
+        "register_brand_kit",
+        "compile_typst_document",
+        "generate_bento_presentation",
+        "relight_product_image",
+        "generate_motion_ad",
+        "audit_ad_timeline",
+        "reframe_video",
+        "compile_catalog_typst",
+        "creative_critic_audit",
     ]
-    assert len(MCP_TOOLS) == 10
+    assert len(MCP_TOOLS) == 19
     for t in expected_tools:
         assert t in MCP_TOOLS
         assert callable(MCP_TOOLS[t])
@@ -69,3 +78,24 @@ def test_mcp_tool_telemetry_and_status():
     status = tool_get_generation_status("job_test_123")
     assert status["job_id"] == "job_test_123"
     assert status["status"] == "completed"
+
+
+def test_mcp_tool_compile_catalog_and_critic():
+    import json
+    from opengen.mcp.server import tool_compile_catalog_typst, tool_creative_critic_audit
+
+    products = [
+        {"name": "Organic Pure Milk", "price": "$4.50", "category": "Dairy", "is_hero": True},
+        {"name": "Artisan Butter", "price": "$6.00", "category": "Dairy", "is_hero": False}
+    ]
+    res_cat = tool_compile_catalog_typst(products_json=json.dumps(products), title="Farm Fresh")
+    assert res_cat["status"] == "completed"
+    assert Path(res_cat["pdf_path"]).exists()
+
+    critic_res = tool_creative_critic_audit(
+        engine="document",
+        payload_json=json.dumps({"text": "Pure fresh organic milk"})
+    )
+    assert critic_res["status"] == "completed"
+    assert "report" in critic_res
+    assert critic_res["report"]["passed"] is True

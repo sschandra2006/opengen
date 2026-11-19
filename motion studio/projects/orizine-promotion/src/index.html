@@ -1,0 +1,1820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Orizine — Tactile Industrial Craftsmanship (30s Reel)</title>
+  <meta name="viewport" content="width=1080, height=1920, initial-scale=1.0">
+  
+  <!-- Google Fonts: Space Grotesk, Outfit, Space Mono, Caveat -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Outfit:wght@400;500;600;700&family=Space+Grotesk:wght@600;700;800&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+
+  <!-- Local Script Dependencies -->
+  <script src="../assets/gsap.min.js"></script>
+
+  <style>
+    :root {
+      /* Brand Color System */
+      --color-orange-500: #FF7A1A;
+      --color-orange-600: #E66508;
+      --color-orange-700: #C25206;
+      --color-orange-100: #FFF3EA;
+      --color-orange-glow: rgba(255, 122, 26, 0.16);
+
+      /* Canvas & Paper System */
+      --color-bg-base: #FFF8F0;
+      --color-bg-surface: #FFFFFF;
+      --color-bg-elevated: #FFF2E5;
+      --color-border-warm: #EDD0B0;
+      --color-border-subtle: #F5DEC8;
+
+      /* Ink & Typography */
+      --color-ink-black: #0A0A0A;
+      --color-text-primary: #1C1917;
+      --color-text-secondary: #57534E;
+      --color-text-muted: #78716C;
+
+      /* Physical CMYK Registration Accents */
+      --color-cmyk-cyan: #06B6D4;
+      --color-cmyk-yellow: #FACC15;
+      --color-cmyk-magenta: #EC4899;
+      --color-cmyk-black: #0A0A0A;
+      --color-success: #059669;
+
+      /* Fonts */
+      --font-display: 'Space Grotesk', -apple-system, sans-serif;
+      --font-body: 'Outfit', -apple-system, sans-serif;
+      --font-mono: 'Space Mono', monospace;
+      --font-hand: 'Caveat', cursive;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      width: 1080px;
+      height: 1920px;
+      overflow: hidden;
+      background-color: var(--color-bg-base);
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140' viewBox='0 0 140 140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+      background-attachment: fixed;
+      font-family: var(--font-body);
+      color: var(--color-text-primary);
+      position: relative;
+    }
+
+    /* Master Composition Root */
+    #composition-root {
+      position: relative;
+      width: 1080px;
+      height: 1920px;
+      overflow: hidden;
+    }
+
+    /* Fixed Top Navbar */
+    .orizine-navbar {
+      position: absolute;
+      top: 50px;
+      left: 60px;
+      right: 60px;
+      height: 90px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(12px);
+      border: 1.5px solid var(--color-border-warm);
+      border-radius: 9999px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 35px;
+      box-shadow: 0 8px 24px rgba(10, 10, 10, 0.06);
+      z-index: 100;
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand-icon {
+      width: 44px;
+      height: 44px;
+      background: var(--color-orange-500);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px var(--color-orange-glow);
+    }
+
+    .brand-icon svg {
+      width: 26px;
+      height: 26px;
+      fill: #FFFFFF;
+    }
+
+    .brand-name {
+      font-family: var(--font-display);
+      font-size: 32px;
+      font-weight: 800;
+      color: var(--color-ink-black);
+      letter-spacing: -0.03em;
+    }
+
+    .nav-campus-chip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--color-orange-100);
+      border: 1px solid var(--color-border-warm);
+      padding: 8px 18px;
+      border-radius: 9999px;
+      font-family: var(--font-mono);
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--color-orange-700);
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .nav-link-pill {
+      font-family: var(--font-mono);
+      font-size: 16px;
+      font-weight: 700;
+      padding: 8px 18px;
+      border-radius: 9999px;
+      border: 1.5px solid var(--color-ink-black);
+      background: var(--color-ink-black);
+      color: #FFFFFF;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .nav-cart-badge {
+      background: var(--color-orange-500);
+      color: #FFFFFF;
+      font-size: 13px;
+      padding: 2px 7px;
+      border-radius: 9999px;
+    }
+
+    /* Stage Canvas */
+    .stage-container {
+      position: absolute;
+      top: 170px;
+      left: 60px;
+      width: 960px;
+      height: 1680px;
+    }
+
+    /* Scene Layers */
+    .scene-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* =========================================================
+       SCENE 1: THE HERO & 5-SHEET PAPER FAN
+       ========================================================= */
+    .scene-hero {
+      justify-content: flex-start;
+      gap: 30px;
+    }
+
+    .hero-top-grid {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-top: 20px;
+    }
+
+    .typewriter-badge {
+      font-family: var(--font-mono);
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--color-orange-600);
+      background: var(--color-orange-100);
+      border: 1px solid var(--color-border-warm);
+      padding: 8px 20px;
+      border-radius: 9999px;
+      display: inline-block;
+      margin-bottom: 16px;
+      letter-spacing: -0.01em;
+    }
+
+    .hero-headline {
+      font-family: var(--font-display);
+      font-size: 58px;
+      font-weight: 800;
+      line-height: 1.12;
+      color: var(--color-ink-black);
+      letter-spacing: -0.03em;
+    }
+
+    .hero-headline span {
+      color: var(--color-orange-500);
+      position: relative;
+    }
+
+    .hero-trust-stack {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 12px;
+      margin-top: 10px;
+    }
+
+    .trust-chip {
+      font-family: var(--font-mono);
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--color-ink-black);
+      background: var(--color-bg-surface);
+      border: 1.5px solid var(--color-border-warm);
+      padding: 8px 18px;
+      border-radius: 9999px;
+      box-shadow: 0 4px 10px rgba(10, 10, 10, 0.04);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .handwritten-sticker {
+      font-family: var(--font-hand);
+      font-size: 34px;
+      font-weight: 700;
+      color: var(--color-orange-600);
+      transform: rotate(-6deg);
+      margin-top: 5px;
+    }
+
+    /* THE ICONIC 5-SHEET PAPER FAN (HeroPaperFan) */
+    .paper-fan-stage {
+      position: relative;
+      width: 100%;
+      height: 680px;
+      margin: 15px 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .fan-sheet {
+      position: absolute;
+      width: 440px;
+      height: 600px;
+      background: var(--color-bg-surface);
+      border: 1.5px solid var(--color-border-warm);
+      border-radius: 20px;
+      box-shadow: 0 20px 45px rgba(10, 10, 10, 0.12), 0 4px 10px rgba(10, 10, 10, 0.05);
+      padding: 30px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transform-origin: bottom center;
+      transition: transform 0.4s ease;
+    }
+
+    .fan-sheet-1 { transform: rotate(-14deg) translateY(24px) translateX(-70px); z-index: 1; }
+    .fan-sheet-2 { transform: rotate(-7deg) translateY(10px) translateX(-35px); z-index: 2; }
+    .fan-sheet-3 { transform: rotate(0deg) translateY(0px); z-index: 5; border-color: var(--color-orange-500); }
+    .fan-sheet-4 { transform: rotate(7deg) translateY(10px) translateX(35px); z-index: 2; }
+    .fan-sheet-5 { transform: rotate(14deg) translateY(24px) translateX(70px); z-index: 1; }
+
+    /* Sheet Document Anatomy */
+    .sheet-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1.5px solid var(--color-border-subtle);
+      padding-bottom: 15px;
+    }
+
+    .sheet-cmyk-dots {
+      display: flex;
+      gap: 6px;
+    }
+    .cmyk-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+    .dot-c { background: var(--color-cmyk-cyan); }
+    .dot-m { background: var(--color-cmyk-magenta); }
+    .dot-y { background: var(--color-cmyk-yellow); }
+    .dot-k { background: var(--color-cmyk-black); }
+
+    .sheet-status-pill {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--color-orange-700);
+      background: var(--color-orange-100);
+      padding: 4px 12px;
+      border-radius: 9999px;
+      border: 1px solid var(--color-border-warm);
+    }
+
+    .sheet-body {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      margin-top: 15px;
+    }
+
+    .sheet-title-sim {
+      height: 24px;
+      width: 80%;
+      background: var(--color-ink-black);
+      border-radius: 6px;
+    }
+
+    .sheet-subtitle-sim {
+      height: 14px;
+      width: 55%;
+      background: var(--color-orange-500);
+      border-radius: 4px;
+    }
+
+    .sim-line {
+      height: 10px;
+      background: #E5E7EB;
+      border-radius: 4px;
+    }
+    .line-full { width: 100%; }
+    .line-80 { width: 80%; }
+    .line-60 { width: 60%; }
+
+    .sheet-diagram-sim {
+      width: 100%;
+      height: 140px;
+      border: 1.5px dashed var(--color-border-warm);
+      border-radius: 12px;
+      background: var(--color-bg-elevated);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-mono);
+      font-size: 14px;
+      color: var(--color-text-secondary);
+      font-weight: 700;
+    }
+
+    .sheet-foot {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--color-text-muted);
+      border-top: 1px solid var(--color-border-subtle);
+      padding-top: 12px;
+    }
+
+    /* Hero CTA Pill Buttons */
+    .hero-btn-stack {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      margin-top: 10px;
+    }
+
+    .btn-order-now-ref {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px 48px;
+      background-color: var(--color-ink-black);
+      color: #FFFFFF;
+      border-radius: 9999px;
+      font-family: var(--font-mono);
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      border: 2px solid var(--color-ink-black);
+      box-shadow: 0 8px 24px rgba(10, 10, 10, 0.25);
+      gap: 12px;
+    }
+
+    .btn-stationery-ref {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px 42px;
+      background-color: var(--color-bg-surface);
+      color: var(--color-ink-black);
+      border-radius: 9999px;
+      font-family: var(--font-mono);
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      border: 2px solid var(--color-border-warm);
+      box-shadow: 0 4px 14px rgba(10, 10, 10, 0.06);
+    }
+
+    /* Horizontal Micro-Pricing Strip */
+    .micro-pricing-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-top: 25px;
+    }
+
+    .micro-price-chip {
+      background: var(--color-bg-surface);
+      border: 1.5px solid var(--color-border-warm);
+      border-radius: 16px;
+      padding: 16px 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 4px 12px rgba(10, 10, 10, 0.04);
+    }
+
+    .chip-label {
+      font-family: var(--font-mono);
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--color-text-secondary);
+      text-transform: uppercase;
+    }
+
+    .chip-price {
+      font-family: var(--font-display);
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--color-ink-black);
+    }
+
+    .chip-sub {
+      font-family: var(--font-body);
+      font-size: 13px;
+      color: var(--color-text-muted);
+      font-weight: 600;
+    }
+
+    /* =========================================================
+       SCENE 2: UPLOAD & FREE PDF STUDIO
+       ========================================================= */
+    .scene-upload {
+      gap: 25px;
+      justify-content: center;
+    }
+
+    .section-header-block {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    .section-kicker {
+      font-family: var(--font-mono);
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--color-orange-600);
+      background: var(--color-orange-100);
+      border: 1px solid var(--color-border-warm);
+      padding: 6px 20px;
+      border-radius: 9999px;
+      display: inline-block;
+      margin-bottom: 12px;
+    }
+
+    .section-title {
+      font-family: var(--font-display);
+      font-size: 52px;
+      font-weight: 800;
+      color: var(--color-ink-black);
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+    }
+
+    .section-desc {
+      font-size: 24px;
+      color: var(--color-text-secondary);
+      margin-top: 10px;
+      font-weight: 500;
+    }
+
+    /* Main Tactile Upload Card */
+    .tactile-card {
+      background: var(--color-bg-surface);
+      border: 2px solid var(--color-border-warm);
+      border-radius: 28px;
+      padding: 40px;
+      box-shadow: 0 20px 50px rgba(10, 10, 10, 0.08);
+      position: relative;
+    }
+
+    .dropzone-box {
+      border: 3px dashed var(--color-orange-500);
+      background: var(--color-orange-100);
+      border-radius: 22px;
+      padding: 60px 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      text-align: center;
+      position: relative;
+    }
+
+    .drop-icon-circle {
+      width: 90px;
+      height: 90px;
+      background: var(--color-orange-500);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 10px 25px var(--color-orange-glow);
+    }
+
+    .drop-icon-circle svg {
+      width: 48px;
+      height: 48px;
+      fill: #FFFFFF;
+    }
+
+    .drop-title {
+      font-family: var(--font-display);
+      font-size: 34px;
+      font-weight: 800;
+      color: var(--color-ink-black);
+    }
+
+    .format-pills {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .fmt-pill {
+      font-family: var(--font-mono);
+      font-size: 16px;
+      font-weight: 700;
+      background: var(--color-bg-surface);
+      border: 1.5px solid var(--color-border-warm);
+      padding: 6px 14px;
+      border-radius: 8px;
+      color: var(--color-ink-black);
+    }
+
+    /* Dropped Document Card Simulation */
+    .dropped-doc-card {
+      background: var(--color-bg-surface);
+      border: 1.5px solid var(--color-border-warm);
+      border-radius: 18px;
+      padding: 24px;
+      margin-top: 25px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      box-shadow: 0 8px 20px rgba(10, 10, 10, 0.05);
+    }
+
+    .doc-icon-badge {
+      width: 64px;
+      height: 76px;
+      background: #EF4444;
+      border-radius: 10px;
+      color: #FFFFFF;
+      font-family: var(--font-mono);
+      font-size: 16px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .doc-meta {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .doc-name {
+      font-family: var(--font-display);
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--color-ink-black);
+    }
+
+    .doc-sub {
+      font-family: var(--font-mono);
+      font-size: 17px;
+      color: var(--color-text-secondary);
+    }
+
+    .upload-progress-bar {
+      width: 100%;
+      height: 10px;
+      background: #E5E7EB;
+      border-radius: 9999px;
+      overflow: hidden;
+      margin-top: 6px;
+    }
+
+    .upload-progress-fill {
+      width: 0%;
+      height: 100%;
+      background: var(--color-orange-500);
+      border-radius: 9999px;
+    }
+
+    /* Student PDF Studio Callout */
+    .pdf-studio-callout {
+      background: var(--color-ink-black);
+      color: #FFFFFF;
+      border-radius: 20px;
+      padding: 25px 30px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 25px;
+    }
+
+    .pdf-studio-text {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .studio-badge {
+      font-family: var(--font-mono);
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--color-orange-500);
+      letter-spacing: 0.05em;
+    }
+
+    .studio-title {
+      font-family: var(--font-display);
+      font-size: 26px;
+      font-weight: 700;
+    }
+
+    /* =========================================================
+       SCENE 3: 4-BLOCK CONFIG & SECTION SPLITTING
+       ========================================================= */
+    .scene-config {
+      gap: 25px;
+      justify-content: center;
+    }
+
+    .config-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-top: 10px;
+    }
+
+    .config-block {
+      background: var(--color-bg-surface);
+      border: 2px solid var(--color-border-warm);
+      border-radius: 22px;
+      padding: 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      box-shadow: 0 6px 18px rgba(10, 10, 10, 0.04);
+      transition: all 0.3s ease;
+    }
+
+    .config-block.active-block {
+      border-color: var(--color-orange-500);
+      background: var(--color-orange-100);
+      box-shadow: 0 10px 30px var(--color-orange-glow);
+    }
+
+    .block-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .block-tag {
+      font-family: var(--font-mono);
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--color-text-secondary);
+      text-transform: uppercase;
+    }
+
+    .block-active-indicator {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--color-orange-500);
+      box-shadow: 0 0 10px var(--color-orange-500);
+    }
+
+    .block-title {
+      font-family: var(--font-display);
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--color-ink-black);
+    }
+
+    .block-sub {
+      font-family: var(--font-body);
+      font-size: 18px;
+      color: var(--color-text-secondary);
+      line-height: 1.35;
+    }
+
+    /* Section Splitter Expanded Demo */
+    .splitter-box {
+      background: var(--color-bg-surface);
+      border: 2px solid var(--color-border-warm);
+      border-radius: 24px;
+      padding: 30px;
+      margin-top: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .splitter-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--color-bg-elevated);
+      border: 1.5px solid var(--color-border-subtle);
+      border-radius: 16px;
+      padding: 18px 24px;
+    }
+
+    .splitter-col-meta {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .col-badge {
+      font-family: var(--font-mono);
+      font-size: 16px;
+      font-weight: 700;
+      padding: 6px 14px;
+      border-radius: 8px;
+    }
+
+    .col-badge-colour {
+      background: #FEF08A;
+      color: #854D0E;
+      border: 1px solid #FACC15;
+    }
+
+    .col-badge-bw {
+      background: #E2E8F0;
+      color: #1E293B;
+      border: 1px solid #94A3B8;
+    }
+
+    .range-text {
+      font-family: var(--font-mono);
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--color-ink-black);
+    }
+
+    .rate-text {
+      font-family: var(--font-display);
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--color-orange-600);
+    }
+
+    .live-calc-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--color-ink-black);
+      color: #FFFFFF;
+      border-radius: 18px;
+      padding: 22px 30px;
+      margin-top: 15px;
+    }
+
+    .calc-label {
+      font-family: var(--font-mono);
+      font-size: 18px;
+      font-weight: 700;
+      color: #9CA3AF;
+    }
+
+    .calc-amount {
+      font-family: var(--font-display);
+      font-size: 38px;
+      font-weight: 800;
+      color: var(--color-orange-500);
+    }
+
+    /* =========================================================
+       SCENE 4: CAMPUS STATIONERY STORE
+       ========================================================= */
+    .scene-store {
+      gap: 25px;
+      justify-content: center;
+    }
+
+    .store-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-top: 10px;
+    }
+
+    .store-card {
+      background: var(--color-bg-surface);
+      border: 2px solid var(--color-border-warm);
+      border-radius: 22px;
+      padding: 26px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      height: 280px;
+      box-shadow: 0 8px 20px rgba(10, 10, 10, 0.05);
+      position: relative;
+    }
+
+    .store-tag {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 700;
+      background: var(--color-orange-100);
+      border: 1px solid var(--color-border-warm);
+      color: var(--color-orange-700);
+      padding: 4px 10px;
+      border-radius: 9999px;
+      align-self: flex-start;
+    }
+
+    .store-item-name {
+      font-family: var(--font-display);
+      font-size: 26px;
+      font-weight: 800;
+      color: var(--color-ink-black);
+      line-height: 1.2;
+    }
+
+    .store-pricing-row {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+    }
+
+    .store-price {
+      font-family: var(--font-display);
+      font-size: 34px;
+      font-weight: 800;
+      color: var(--color-ink-black);
+    }
+
+    .store-mrp {
+      font-family: var(--font-mono);
+      font-size: 18px;
+      text-decoration: line-through;
+      color: var(--color-text-muted);
+    }
+
+    .store-add-btn {
+      background: var(--color-ink-black);
+      color: #FFFFFF;
+      font-family: var(--font-mono);
+      font-size: 16px;
+      font-weight: 700;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 9999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .store-perk-banner {
+      background: var(--color-bg-elevated);
+      border: 2px dashed var(--color-orange-500);
+      border-radius: 20px;
+      padding: 24px 30px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 15px;
+    }
+
+    .perk-text {
+      font-family: var(--font-mono);
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--color-ink-black);
+    }
+
+    .perk-pill {
+      font-family: var(--font-mono);
+      font-size: 16px;
+      font-weight: 700;
+      background: var(--color-orange-500);
+      color: #FFFFFF;
+      padding: 8px 18px;
+      border-radius: 9999px;
+    }
+
+    /* =========================================================
+       SCENE 5: THERMAL RECEIPT & GATE DELIVERY
+       ========================================================= */
+    .scene-delivery {
+      gap: 25px;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* THE THERMAL RECEIPT EMULATION */
+    .thermal-receipt {
+      width: 760px;
+      background: #FFFFFF;
+      border: 2px solid var(--color-border-warm);
+      border-radius: 24px;
+      box-shadow: 0 25px 60px rgba(10, 10, 10, 0.12);
+      padding: 45px;
+      font-family: var(--font-mono);
+      position: relative;
+    }
+
+    .receipt-header {
+      text-align: center;
+      border-bottom: 2px dashed var(--color-ink-black);
+      padding-bottom: 25px;
+      margin-bottom: 25px;
+    }
+
+    .receipt-brand {
+      font-family: var(--font-display);
+      font-size: 38px;
+      font-weight: 800;
+      color: var(--color-ink-black);
+    }
+
+    .receipt-id {
+      font-size: 18px;
+      color: var(--color-text-secondary);
+      margin-top: 6px;
+    }
+
+    .receipt-line-items {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      border-bottom: 2px dashed var(--color-ink-black);
+      padding-bottom: 25px;
+      margin-bottom: 25px;
+    }
+
+    .receipt-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--color-ink-black);
+    }
+
+    .receipt-total-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: var(--font-display);
+      font-size: 36px;
+      font-weight: 800;
+      color: var(--color-ink-black);
+      border-bottom: 2px solid var(--color-ink-black);
+      padding-bottom: 20px;
+      margin-bottom: 25px;
+    }
+
+    .receipt-gate-stamp {
+      background: var(--color-orange-100);
+      border: 2px solid var(--color-orange-500);
+      border-radius: 16px;
+      padding: 20px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .stamp-target {
+      font-family: var(--font-display);
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--color-orange-700);
+    }
+
+    .stamp-time {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--color-ink-black);
+    }
+
+    /* WhatsApp Alert Box Mockup */
+    .whatsapp-alert-box {
+      width: 760px;
+      background: #FFFFFF;
+      border: 1.5px solid #86EFAC;
+      border-radius: 20px;
+      padding: 22px 28px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      box-shadow: 0 10px 30px rgba(16, 185, 129, 0.1);
+      margin-top: 15px;
+    }
+
+    .wa-icon {
+      width: 52px;
+      height: 52px;
+      background: #25D366;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .wa-icon svg {
+      width: 30px;
+      height: 30px;
+      fill: #FFFFFF;
+    }
+
+    .wa-text {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .wa-title {
+      font-family: var(--font-display);
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--color-ink-black);
+    }
+
+    .wa-sub {
+      font-size: 17px;
+      color: var(--color-text-secondary);
+      font-family: var(--font-body);
+    }
+
+    /* =========================================================
+       SCENE 6: BRAND CALL-TO-ACTION & LOCKUP
+       ========================================================= */
+    .scene-cta {
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      gap: 30px;
+    }
+
+    .cta-logo-wrap {
+      width: 140px;
+      height: 140px;
+      background: var(--color-orange-500);
+      border-radius: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 20px 50px var(--color-orange-glow);
+    }
+
+    .cta-logo-wrap svg {
+      width: 80px;
+      height: 80px;
+      fill: #FFFFFF;
+    }
+
+    .cta-brand-title {
+      font-family: var(--font-display);
+      font-size: 78px;
+      font-weight: 800;
+      color: var(--color-ink-black);
+      letter-spacing: -0.04em;
+      line-height: 1.05;
+    }
+
+    .cta-brand-title span {
+      color: var(--color-orange-500);
+    }
+
+    .cta-tagline {
+      font-family: var(--font-mono);
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--color-text-secondary);
+      max-width: 680px;
+    }
+
+    .cta-action-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 64px;
+      background: var(--color-ink-black);
+      color: #FFFFFF;
+      border-radius: 9999px;
+      font-family: var(--font-mono);
+      font-size: 32px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      border: 3px solid var(--color-ink-black);
+      box-shadow: 0 12px 35px rgba(10, 10, 10, 0.3);
+      gap: 16px;
+      margin-top: 10px;
+    }
+
+    .cta-handwritten {
+      font-family: var(--font-hand);
+      font-size: 42px;
+      font-weight: 700;
+      color: var(--color-orange-600);
+      margin-top: 5px;
+    }
+
+    /* Interactive Cursor Simulation */
+    .tactile-cursor {
+      position: absolute;
+      width: 44px;
+      height: 44px;
+      z-index: 200;
+      pointer-events: none;
+      top: 0;
+      left: 0;
+      opacity: 0;
+    }
+
+    .tactile-cursor svg {
+      width: 100%;
+      height: 100%;
+      filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.35));
+    }
+
+    .click-ripple {
+      position: absolute;
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      border: 3px solid var(--color-orange-500);
+      background: rgba(255, 122, 26, 0.2);
+      transform: translate(-50%, -50%) scale(0);
+      opacity: 0;
+      pointer-events: none;
+      z-index: 199;
+    }
+  </style>
+</head>
+<body>
+  <!-- Master HyperFrames Composition Container -->
+  <div id="composition-root" data-duration="25" data-composition-id="orizine-exact-taste-25s">
+    
+    <!-- Audio Master Track (-14 LUFS, 30s) -->
+    <audio id="master-audio" src="../audio/master_audio.mp3" preload="auto"></audio>
+
+    <!-- Top Fixed Navbar -->
+    <div class="orizine-navbar">
+      <div class="nav-brand">
+        <div class="brand-icon">
+          <!-- Orizine Brand SVG Logo -->
+          <svg viewBox="0 0 24 24">
+            <path d="M19 8h-1V3H6v5H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zM8 5h8v3H8V5zm8 12v2H8v-2h8zm2-2v-2H6v2H4v-4c0-.55.45-1 1-1h14c.55 0 1 .45 1 1v4h-2z"/>
+          </svg>
+        </div>
+        <div class="brand-name">orizine</div>
+      </div>
+      <div class="nav-campus-chip">
+        <span>📍 VNR VJIET</span>
+      </div>
+      <div class="nav-links">
+        <div class="nav-link-pill">
+          <span>cart</span>
+          <span class="nav-cart-badge" id="nav-cart-num">0</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stage Container -->
+    <div class="stage-container">
+
+      <!-- SCENE 1: THE HERO & 5-SHEET PAPER FAN (0.0s – 4.5s) -->
+      <div class="scene-layer scene-hero" id="scene-1">
+        <div class="hero-top-grid">
+          <div>
+            <div class="typewriter-badge">printouts, stationery</div>
+            <h1 class="hero-headline">
+              You order today.<br>
+              We deliver tomorrow<br>
+              <span>before 9 AM</span><br>
+              at college.
+            </h1>
+          </div>
+          <div class="hero-trust-stack">
+            <div class="trust-chip">
+              <span>🔒 Bank-grade 256-bit</span>
+            </div>
+            <div class="trust-chip">
+              <span>⚡ 200MB file limit</span>
+            </div>
+            <div class="trust-chip">
+              <span>✨ Section control</span>
+            </div>
+            <div class="handwritten-sticker">made with love ❤️</div>
+          </div>
+        </div>
+
+        <!-- 5-Sheet Paper Fan Centerpiece -->
+        <div class="paper-fan-stage">
+          <!-- Sheet 1 (Far Left) -->
+          <div class="fan-sheet fan-sheet-1">
+            <div class="sheet-head">
+              <div class="sheet-cmyk-dots">
+                <div class="cmyk-dot dot-c"></div>
+                <div class="cmyk-dot dot-m"></div>
+              </div>
+              <div class="sheet-status-pill">LAB RECORD</div>
+            </div>
+            <div class="sheet-body">
+              <div class="sheet-title-sim"></div>
+              <div class="sim-line line-full"></div>
+              <div class="sim-line line-80"></div>
+              <div class="sheet-diagram-sim">CIRCUIT DIAGRAM</div>
+            </div>
+            <div class="sheet-foot">
+              <span>ORIZINE PRINT</span>
+              <span>PG 01</span>
+            </div>
+          </div>
+
+          <!-- Sheet 2 (Mid Left) -->
+          <div class="fan-sheet fan-sheet-2">
+            <div class="sheet-head">
+              <div class="sheet-cmyk-dots">
+                <div class="cmyk-dot dot-y"></div>
+                <div class="cmyk-dot dot-k"></div>
+              </div>
+              <div class="sheet-status-pill">NOTES</div>
+            </div>
+            <div class="sheet-body">
+              <div class="sheet-title-sim"></div>
+              <div class="sim-line line-full"></div>
+              <div class="sim-line line-full"></div>
+              <div class="sim-line line-60"></div>
+            </div>
+            <div class="sheet-foot">
+              <span>80 GSM BOND</span>
+              <span>PG 02</span>
+            </div>
+          </div>
+
+          <!-- Sheet 3 (Center Active) -->
+          <div class="fan-sheet fan-sheet-3">
+            <div class="sheet-head">
+              <div class="sheet-cmyk-dots">
+                <div class="cmyk-dot dot-c"></div>
+                <div class="cmyk-dot dot-m"></div>
+                <div class="cmyk-dot dot-y"></div>
+                <div class="cmyk-dot dot-k"></div>
+              </div>
+              <div class="sheet-status-pill" style="background:#FF7A1A;color:#FFFFFF;">ASSIGNMENT #01</div>
+            </div>
+            <div class="sheet-body">
+              <div class="sheet-title-sim" style="width:90%;"></div>
+              <div class="sheet-subtitle-sim"></div>
+              <div class="sim-line line-full"></div>
+              <div class="sim-line line-full"></div>
+              <div class="sheet-diagram-sim" style="background:#FFF3EA;border-color:#FF7A1A;color:#C25206;">
+                COLOR COVER + DUPLEX BODY
+              </div>
+            </div>
+            <div class="sheet-foot">
+              <span>THERMAL BOUND</span>
+              <span>48 PAGES</span>
+            </div>
+          </div>
+
+          <!-- Sheet 4 (Mid Right) -->
+          <div class="fan-sheet fan-sheet-4">
+            <div class="sheet-head">
+              <div class="sheet-cmyk-dots">
+                <div class="cmyk-dot dot-c"></div>
+                <div class="cmyk-dot dot-k"></div>
+              </div>
+              <div class="sheet-status-pill">PROJECT</div>
+            </div>
+            <div class="sheet-body">
+              <div class="sheet-title-sim"></div>
+              <div class="sim-line line-full"></div>
+              <div class="sim-line line-80"></div>
+            </div>
+            <div class="sheet-foot">
+              <span>SPIRAL COIL</span>
+              <span>PG 04</span>
+            </div>
+          </div>
+
+          <!-- Sheet 5 (Far Right) -->
+          <div class="fan-sheet fan-sheet-5">
+            <div class="sheet-head">
+              <div class="sheet-cmyk-dots">
+                <div class="cmyk-dot dot-m"></div>
+                <div class="cmyk-dot dot-y"></div>
+              </div>
+              <div class="sheet-status-pill">VNR SPECIAL</div>
+            </div>
+            <div class="sheet-body">
+              <div class="sheet-title-sim"></div>
+              <div class="sim-line line-full"></div>
+              <div class="sim-line line-60"></div>
+            </div>
+            <div class="sheet-foot">
+              <span>TITLE PAGE</span>
+              <span>PG 05</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Buttons Stack -->
+        <div class="hero-btn-stack">
+          <div class="btn-order-now-ref" id="hero-order-btn">order now ➜</div>
+          <div class="btn-stationery-ref">stationery</div>
+        </div>
+
+        <!-- Micro-Pricing Strip -->
+        <div class="micro-pricing-row">
+          <div class="micro-price-chip">
+            <span class="chip-label">B/W SINGLE</span>
+            <span class="chip-price">₹1</span>
+            <span class="chip-sub">per page</span>
+          </div>
+          <div class="micro-price-chip">
+            <span class="chip-label">B/W DUPLEX</span>
+            <span class="chip-price">₹1.50</span>
+            <span class="chip-sub">both sides</span>
+          </div>
+          <div class="micro-price-chip" style="border-color:var(--color-orange-500);background:var(--color-orange-100);">
+            <span class="chip-label" style="color:var(--color-orange-700);">FULL COLOUR</span>
+            <span class="chip-price" style="color:var(--color-orange-600);">₹5</span>
+            <span class="chip-sub">vibrant ink</span>
+          </div>
+          <div class="micro-price-chip">
+            <span class="chip-label">BINDING</span>
+            <span class="chip-price">₹40</span>
+            <span class="chip-sub">thermal / spiral</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- SCENE 2: UPLOAD & FREE PDF STUDIO (4.5s – 10.2s) -->
+      <div class="scene-layer scene-upload" id="scene-2">
+        <div class="section-header-block">
+          <div class="section-kicker">STEP 01 · FAST INGESTION</div>
+          <h2 class="section-title">Upload Any Document</h2>
+          <p class="section-desc">Up to 200MB · PDF, DOCX, PPTX, JPG · Auto-deleted after delivery</p>
+        </div>
+
+        <div class="tactile-card">
+          <div class="dropzone-box" id="dropzone-target">
+            <div class="drop-icon-circle">
+              <svg viewBox="0 0 24 24">
+                <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/>
+              </svg>
+            </div>
+            <div class="drop-title">Drag & Drop Documents Here</div>
+            <div class="format-pills">
+              <span class="fmt-pill">.PDF</span>
+              <span class="fmt-pill">.DOCX</span>
+              <span class="fmt-pill">.PPTX</span>
+              <span class="fmt-pill">.PNG</span>
+              <span class="fmt-pill">.JPG</span>
+            </div>
+          </div>
+
+          <!-- Uploaded Document Bar -->
+          <div class="dropped-doc-card" id="uploaded-doc-bar" style="opacity:0;transform:translateY(20px);">
+            <div class="doc-icon-badge">PDF</div>
+            <div class="doc-meta">
+              <div class="doc-name">DSP_Lab_Manual_Final.pdf</div>
+              <div class="doc-sub">48 Pages · 14.2 MB · Verified 256-bit TLS</div>
+              <div class="upload-progress-bar">
+                <div class="upload-progress-fill" id="upload-bar-fill"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Student PDF Studio Callout -->
+        <div class="pdf-studio-callout">
+          <div class="pdf-studio-text">
+            <span class="studio-badge">FREE STUDENT FEATURE</span>
+            <span class="studio-title">Built-In PDF Studio (Merge, Split, Compress)</span>
+          </div>
+          <div class="trust-chip" style="background:#FFFFFF;color:#0A0A0A;border:none;">
+            <span>100% Client-Side</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- SCENE 3: 4-BLOCK CONFIG & SECTION SPLITTING (10.2s – 16.8s) -->
+      <div class="scene-layer scene-config" id="scene-3">
+        <div class="section-header-block">
+          <div class="section-kicker">STEP 02 · FULL CONTROL</div>
+          <h2 class="section-title">Split Sections With Ease</h2>
+          <p class="section-desc">Colour cover pages + Duplex B&W body + Professional Binding</p>
+        </div>
+
+        <!-- 4-Block Modular Grid -->
+        <div class="config-grid">
+          <div class="config-block active-block" id="cfg-color">
+            <div class="block-header">
+              <span class="block-tag">01 · COLOR MODE</span>
+              <div class="block-active-indicator"></div>
+            </div>
+            <div class="block-title">Section Split ✨</div>
+            <div class="block-sub">Pgs 1–4 Colour, Pgs 5–48 B&W</div>
+          </div>
+
+          <div class="config-block active-block" id="cfg-sides">
+            <div class="block-header">
+              <span class="block-tag">02 · PRINT SIDES</span>
+              <div class="block-active-indicator"></div>
+            </div>
+            <div class="block-title">Double-Sided</div>
+            <div class="block-sub">Both sides for ₹1.50/sheet</div>
+          </div>
+
+          <div class="config-block active-block" id="cfg-bind">
+            <div class="block-header">
+              <span class="block-tag">03 · FINISHING</span>
+              <div class="block-active-indicator"></div>
+            </div>
+            <div class="block-title">Thermal Bound 📘</div>
+            <div class="block-sub">Heat-sealed book spine (₹40)</div>
+          </div>
+
+          <div class="config-block" id="cfg-paper">
+            <div class="block-header">
+              <span class="block-tag">04 · PAPER QUALITY</span>
+            </div>
+            <div class="block-title">80 GSM Bond</div>
+            <div class="block-sub">Bright white smooth stock</div>
+          </div>
+        </div>
+
+        <!-- Splitter Visual Breakdown -->
+        <div class="splitter-box">
+          <div class="splitter-row" style="border-left: 6px solid #FACC15;">
+            <div class="splitter-col-meta">
+              <span class="col-badge col-badge-colour">COLOUR</span>
+              <span class="range-text">Pages 1 – 4 (Cover & Circuit Diagrams)</span>
+            </div>
+            <span class="rate-text">4 × ₹5 = ₹20</span>
+          </div>
+
+          <div class="splitter-row" style="border-left: 6px solid #0A0A0A;">
+            <div class="splitter-col-meta">
+              <span class="col-badge col-badge-bw">B/W DUPLEX</span>
+              <span class="range-text">Pages 5 – 48 (Code & Theory Notes)</span>
+            </div>
+            <span class="rate-text">22 sheets × ₹1.50 = ₹33</span>
+          </div>
+
+          <div class="splitter-row" style="border-left: 6px solid #FF7A1A;">
+            <div class="splitter-col-meta">
+              <span class="col-badge" style="background:#FFF3EA;color:#C25206;border:1px solid #FF7A1A;">FINISHING</span>
+              <span class="range-text">Thermal Book Spine Binding</span>
+            </div>
+            <span class="rate-text">1 copy = ₹40</span>
+          </div>
+        </div>
+
+        <!-- Live Calculation Bar -->
+        <div class="live-calc-bar">
+          <span class="calc-label">LIVE TRANSPARENT TOTAL:</span>
+          <span class="calc-amount" id="calc-total-num">₹93.00</span>
+        </div>
+      </div>
+
+      <!-- SCENE 4: CAMPUS STATIONERY STORE (16.8s – 21.8s) -->
+      <div class="scene-layer scene-store" id="scene-4">
+        <div class="section-header-block">
+          <div class="section-kicker">STEP 03 · CAMPUS STORE</div>
+          <h2 class="section-title">Official College Stationery</h2>
+          <p class="section-desc">Delivered in the same morning package with ZERO extra delivery fee</p>
+        </div>
+
+        <div class="store-grid">
+          <div class="store-card" id="store-item-1">
+            <span class="store-tag">VNR VJIET SPECIAL</span>
+            <div class="store-item-name">VNR First Three Pages</div>
+            <div class="store-pricing-row">
+              <span class="store-price">₹5</span>
+              <span class="store-mrp">₹8</span>
+            </div>
+            <div class="store-add-btn">added to cart ✓</div>
+          </div>
+
+          <div class="store-card" id="store-item-2">
+            <span class="store-tag">LAB COMPLIANT</span>
+            <div class="store-item-name">VNR Record Sheets (10 pk)</div>
+            <div class="store-pricing-row">
+              <span class="store-price">₹12</span>
+              <span class="store-mrp">₹15</span>
+            </div>
+            <div class="store-add-btn">+ add to bundle</div>
+          </div>
+
+          <div class="store-card" id="store-item-3">
+            <span class="store-tag">JUMBO REGISTER</span>
+            <div class="store-item-name">Spiral Register 500 Pgs</div>
+            <div class="store-pricing-row">
+              <span class="store-price">₹330</span>
+              <span class="store-mrp">₹400</span>
+            </div>
+            <div class="store-add-btn">+ add to bundle</div>
+          </div>
+
+          <div class="store-card" id="store-item-4">
+            <span class="store-tag">COPIER PAPER</span>
+            <div class="store-item-name">A4 Sheets Pack (10 sheets)</div>
+            <div class="store-pricing-row">
+              <span class="store-price">₹7.50</span>
+              <span class="store-mrp">₹10</span>
+            </div>
+            <div class="store-add-btn">+ add to bundle</div>
+          </div>
+        </div>
+
+        <div class="store-perk-banner">
+          <span class="perk-text">BUNDLE SHIPPING BENEFIT:</span>
+          <span class="perk-pill">₹0 EXTRA DELIVERY CHARGE</span>
+        </div>
+      </div>
+
+      <!-- SCENE 5: THERMAL RECEIPT & GATE DELIVERY (21.8s – 26.0s) -->
+      <div class="scene-layer scene-delivery" id="scene-5">
+        <div class="section-header-block">
+          <div class="section-kicker">STEP 04 · MORNING DROP</div>
+          <h2 class="section-title">Gate Delivery Before 9 AM</h2>
+        </div>
+
+        <!-- The Thermal Receipt -->
+        <div class="thermal-receipt">
+          <div class="receipt-header">
+            <div class="receipt-brand">ORIZINE DISPATCH SLIP</div>
+            <div class="receipt-id">ORD-2026-VNR89 · 11:59 PM BATCH</div>
+          </div>
+
+          <div class="receipt-line-items">
+            <div class="receipt-row">
+              <span>DSP Lab Record (Split 48p)</span>
+              <span>₹93.00</span>
+            </div>
+            <div class="receipt-row">
+              <span>VNR First 3 Pages (Official)</span>
+              <span>₹5.00</span>
+            </div>
+            <div class="receipt-row">
+              <span>Morning Gate Delivery Fee</span>
+              <span style="color:#059669;">₹0.00 FREE</span>
+            </div>
+          </div>
+
+          <div class="receipt-total-row">
+            <span>PAID VIA UPI</span>
+            <span style="color:#FF7A1A;">₹98.00</span>
+          </div>
+
+          <div class="receipt-gate-stamp">
+            <span class="stamp-target">📍 VNR VJIET · MAIN GATE 1</span>
+            <span class="stamp-time">GUARANTEED MORNING DROP BEFORE 9:00 AM</span>
+          </div>
+        </div>
+
+        <!-- WhatsApp Alert Mockup -->
+        <div class="whatsapp-alert-box">
+          <div class="wa-icon">
+            <svg viewBox="0 0 24 24">
+              <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-5.46-4.45-9.92-9.91-9.92z"/>
+            </svg>
+          </div>
+          <div class="wa-text">
+            <div class="wa-title">WhatsApp: "Order at Gate 1 ready for pickup!"</div>
+            <div class="wa-sub">Executive Rahul is at Gate 1 · Handover code: 202689</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SCENE 6: BRAND CALL-TO-ACTION & LOCKUP (26.0s – 30.0s) -->
+      <div class="scene-layer scene-cta" id="scene-6">
+        <div class="cta-logo-wrap">
+          <svg viewBox="0 0 24 24">
+            <path d="M19 8h-1V3H6v5H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zM8 5h8v3H8V5zm8 12v2H8v-2h8zm2-2v-2H6v2H4v-4c0-.55.45-1 1-1h14c.55 0 1 .45 1 1v4h-2z"/>
+          </svg>
+        </div>
+
+        <h1 class="cta-brand-title">
+          Campus printing,<br>
+          <span>crafted.</span>
+        </h1>
+
+        <p class="cta-tagline">
+          b/w from ₹1 · 200MB uploads · section control · pre-9 AM gate delivery
+        </p>
+
+        <div class="cta-action-btn" id="cta-final-btn">
+          <span>order now ➜ orizine.in</span>
+        </div>
+
+        <div class="cta-handwritten">
+          your grades are safe with us ✨
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Tactile Cursor Simulation -->
+    <div class="tactile-cursor" id="cursor">
+      <svg viewBox="0 0 24 24">
+        <path fill="#0A0A0A" stroke="#FFFFFF" stroke-width="1.5" d="M3 3l7 18 3.5-7.5L21 10 3 3z"/>
+      </svg>
+    </div>
+
+    <!-- Click Ripple Pulse -->
+    <div class="click-ripple" id="ripple"></div>
+
+  </div>
+
+  <script>
+    // Master GSAP Timeline with exact frame-accurate timing synchronization
+    const masterTl = gsap.timeline({ paused: true });
+
+    // Audio Playback Sync
+    const audio = document.getElementById('master-audio');
+
+    // DOM Elements
+    const scene1 = document.getElementById('scene-1');
+    const scene2 = document.getElementById('scene-2');
+    const scene3 = document.getElementById('scene-3');
+    const scene4 = document.getElementById('scene-4');
+    const scene5 = document.getElementById('scene-5');
+    const scene6 = document.getElementById('scene-6');
+
+    const cursor = document.getElementById('cursor');
+    const ripple = document.getElementById('ripple');
+    const navCartNum = document.getElementById('nav-cart-num');
+
+    // Helper: Trigger cursor click ripple
+    function triggerClick(x, y) {
+      gsap.set(ripple, { left: x, top: y, opacity: 1, scale: 0 });
+      gsap.to(ripple, { scale: 1.5, opacity: 0, duration: 0.35, ease: "power2.out" });
+    }
+
+    /* =========================================================
+       TIMELINE ORCHESTRATION (25.00s Total — Snappy Fast Pacing)
+       Scene 1: 0.0s – 3.5s  (vo_1_hero: 0.25s – 1.57s)
+       Scene 2: 3.5s – 7.8s  (vo_2_upload: 3.70s – 6.60s)
+       Scene 3: 7.8s – 13.8s (vo_3_config: 8.00s – 13.26s)
+       Scene 4: 13.8s – 18.5s (vo_4_store: 14.00s – 18.30s)
+       Scene 5: 18.5s – 21.8s (vo_5_delivery: 18.70s – 21.32s)
+       Scene 6: 21.8s – 25.0s (vo_6_cta: 21.80s – 24.80s)
+       ========================================================= */
+
+    // --- SCENE 1: HERO & 5-SHEET PAPER FAN (0.0s – 3.5s) ---
+    masterTl
+      .set(scene1, { opacity: 1 })
+      .fromTo(".typewriter-badge", { y: -20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.35, ease: "power3.out" }, 0.05)
+      .fromTo(".hero-headline", { y: 25, opacity: 0 }, { y: 0, opacity: 1, duration: 0.45, ease: "power3.out" }, 0.1)
+      .fromTo(".trust-chip", { x: 25, opacity: 0, stagger: 0.06 }, { x: 0, opacity: 1, duration: 0.35, ease: "power2.out" }, 0.2)
+      .fromTo(".handwritten-sticker", { scale: 0, opacity: 0, rotation: -20 }, { scale: 1, opacity: 1, rotation: -6, duration: 0.4, ease: "back.out(2)" }, 0.45)
+      // Fan Sheets animate outward rapidly
+      .fromTo(".fan-sheet-1", { rotation: 0, x: 0, y: 40, opacity: 0 }, { rotation: -14, x: -70, y: 24, opacity: 1, duration: 0.5, ease: "power3.out" }, 0.15)
+      .fromTo(".fan-sheet-2", { rotation: 0, x: 0, y: 40, opacity: 0 }, { rotation: -7, x: -35, y: 10, opacity: 1, duration: 0.5, ease: "power3.out" }, 0.2)
+      .fromTo(".fan-sheet-3", { rotation: 0, y: 50, opacity: 0 }, { rotation: 0, y: 0, opacity: 1, duration: 0.5, ease: "power3.out" }, 0.25)
+      .fromTo(".fan-sheet-4", { rotation: 0, x: 0, y: 40, opacity: 0 }, { rotation: 7, x: 35, y: 10, opacity: 1, duration: 0.5, ease: "power3.out" }, 0.3)
+      .fromTo(".fan-sheet-5", { rotation: 0, x: 0, y: 40, opacity: 0 }, { rotation: 14, x: 70, y: 24, opacity: 1, duration: 0.5, ease: "power3.out" }, 0.35)
+      .fromTo(".hero-btn-stack", { y: 15, opacity: 0 }, { y: 0, opacity: 1, duration: 0.35, ease: "power3.out" }, 0.4)
+      .fromTo(".micro-price-chip", { y: 20, opacity: 0, stagger: 0.05 }, { y: 0, opacity: 1, duration: 0.35, ease: "power2.out" }, 0.5)
+      // Cursor moves and clicks "order now ➜"
+      .fromTo(cursor, { x: 260, y: 1600, opacity: 0 }, { x: 260, y: 1420, opacity: 1, duration: 0.5, ease: "power2.out" }, 1.8)
+      .call(() => triggerClick(260, 1420), null, 2.4)
+      .to(".btn-order-now-ref", { scale: 0.96, duration: 0.08, yoyo: true, repeat: 1 }, 2.4)
+      // Transition out
+      .to(scene1, { opacity: 0, y: -30, duration: 0.3, ease: "power2.in" }, 3.3);
+
+    // --- SCENE 2: UPLOAD & FREE PDF STUDIO (3.5s – 7.8s) ---
+    masterTl
+      .set(scene2, { opacity: 1, y: 30 }, 3.5)
+      .to(scene2, { y: 0, opacity: 1, duration: 0.35, ease: "power3.out" }, 3.5)
+      .fromTo("#dropzone-target", { scale: 0.96 }, { scale: 1, duration: 0.35, ease: "power2.out" }, 3.6)
+      // Cursor drags file into dropzone
+      .to(cursor, { x: 540, y: 700, duration: 0.45, ease: "power2.out" }, 3.8)
+      .call(() => triggerClick(540, 700), null, 4.3)
+      // Dropped document appears and progress bar fills
+      .to("#uploaded-doc-bar", { opacity: 1, y: 0, duration: 0.3, ease: "back.out(1.5)" }, 4.4)
+      .to("#upload-bar-fill", { width: "100%", duration: 1.1, ease: "power1.inOut" }, 4.5)
+      // PDF Studio Banner illuminates
+      .fromTo(".pdf-studio-callout", { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.35, ease: "power3.out" }, 5.6)
+      .to(cursor, { opacity: 0, duration: 0.2 }, 6.2)
+      // Transition out
+      .to(scene2, { opacity: 0, y: -30, duration: 0.3, ease: "power2.in" }, 7.6);
+
+    // --- SCENE 3: 4-BLOCK CONFIG & SECTION SPLITTING (7.8s – 13.8s) ---
+    masterTl
+      .set(scene3, { opacity: 1, y: 30 }, 7.8)
+      .to(scene3, { y: 0, opacity: 1, duration: 0.35, ease: "power3.out" }, 7.8)
+      .fromTo(".config-block", { scale: 0.92, opacity: 0, stagger: 0.05 }, { scale: 1, opacity: 1, duration: 0.3, ease: "power2.out" }, 7.9)
+      .fromTo(".splitter-box", { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.35, ease: "power3.out" }, 8.3)
+      .fromTo(".live-calc-bar", { scale: 0.95, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.3, ease: "back.out(1.4)" }, 8.8)
+      // Cursor activates Splitter toggle
+      .set(cursor, { x: 300, y: 640, opacity: 1 }, 9.5)
+      .to(cursor, { x: 320, y: 650, duration: 0.35 }, 9.5)
+      .call(() => triggerClick(320, 650), null, 10.0)
+      .to("#cfg-color", { scale: 1.03, duration: 0.1, yoyo: true, repeat: 1 }, 10.0)
+      // Real-time counter ticks up to ₹93.00
+      .fromTo("#calc-total-num", { scale: 1.2, color: "#FFFFFF" }, { scale: 1, color: "#FF7A1A", duration: 0.3 }, 10.2)
+      // Transition out
+      .to(scene3, { opacity: 0, y: -30, duration: 0.3, ease: "power2.in" }, 13.6);
+
+    // --- SCENE 4: CAMPUS STATIONERY STORE (13.8s – 18.5s) ---
+    masterTl
+      .set(scene4, { opacity: 1, y: 30 }, 13.8)
+      .to(scene4, { y: 0, opacity: 1, duration: 0.35, ease: "power3.out" }, 13.8)
+      .fromTo(".store-card", { y: 20, opacity: 0, stagger: 0.05 }, { y: 0, opacity: 1, duration: 0.3, ease: "power2.out" }, 13.9)
+      .fromTo(".store-perk-banner", { y: 15, opacity: 0 }, { y: 0, opacity: 1, duration: 0.3, ease: "power3.out" }, 14.3)
+      // Cursor adds items to cart
+      .to(cursor, { x: 320, y: 800, duration: 0.35 }, 14.5)
+      .call(() => triggerClick(320, 800), null, 14.9)
+      .to("#store-item-1", { scale: 0.97, duration: 0.08, yoyo: true, repeat: 1 }, 14.9)
+      .to(navCartNum, { textContent: "1", scale: 1.4, duration: 0.15, yoyo: true, repeat: 1 }, 15.0)
+      .to(cursor, { x: 740, y: 800, duration: 0.3 }, 15.3)
+      .call(() => triggerClick(740, 800), null, 15.7)
+      .to("#store-item-2", { scale: 0.97, duration: 0.08, yoyo: true, repeat: 1 }, 15.7)
+      .to(navCartNum, { textContent: "2", scale: 1.4, duration: 0.15, yoyo: true, repeat: 1 }, 15.8)
+      // Transition out
+      .to(scene4, { opacity: 0, y: -30, duration: 0.3, ease: "power2.in" }, 18.3);
+
+    // --- SCENE 5: THERMAL RECEIPT & GATE DELIVERY (18.5s – 21.8s) ---
+    masterTl
+      .set(scene5, { opacity: 1, y: 30 }, 18.5)
+      .to(scene5, { y: 0, opacity: 1, duration: 0.35, ease: "power3.out" }, 18.5)
+      .fromTo(".thermal-receipt", { scale: 0.92, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.4, ease: "back.out(1.2)" }, 18.6)
+      .fromTo(".receipt-row", { x: -15, opacity: 0, stagger: 0.06 }, { x: 0, opacity: 1, duration: 0.25 }, 18.8)
+      .fromTo(".receipt-gate-stamp", { scale: 0.88, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.3, ease: "back.out(1.5)" }, 19.1)
+      .fromTo(".whatsapp-alert-box", { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.3, ease: "power3.out" }, 19.4)
+      // Transition out
+      .to(scene5, { opacity: 0, y: -30, duration: 0.3, ease: "power2.in" }, 21.6);
+
+    // --- SCENE 6: BRAND CALL-TO-ACTION & LOCKUP (21.8s – 25.0s) ---
+    masterTl
+      .set(scene6, { opacity: 1, scale: 0.92 }, 21.8)
+      .to(scene6, { scale: 1, opacity: 1, duration: 0.4, ease: "back.out(1.3)" }, 21.8)
+      .fromTo(".cta-logo-wrap", { scale: 0, rotation: -45 }, { scale: 1, rotation: 0, duration: 0.45, ease: "back.out(1.6)" }, 21.9)
+      .fromTo(".cta-brand-title", { y: 25, opacity: 0 }, { y: 0, opacity: 1, duration: 0.35, ease: "power3.out" }, 22.1)
+      .fromTo(".cta-tagline", { y: 15, opacity: 0 }, { y: 0, opacity: 1, duration: 0.3, ease: "power2.out" }, 22.3)
+      .fromTo(".cta-action-btn", { scale: 0.85, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.4, ease: "back.out(1.5)" }, 22.5)
+      .fromTo(".cta-handwritten", { opacity: 0, rotation: -15 }, { opacity: 1, rotation: -6, duration: 0.4, ease: "back.out(2)" }, 22.8)
+      // Final button pulse
+      .to(".cta-action-btn", { scale: 1.05, duration: 0.5, yoyo: true, repeat: -1, ease: "sine.inOut" }, 23.0);
+
+    // Required by HyperFrames CLI: window.__timelines
+    window.__timelines = [masterTl];
+
+    // For local interactive preview / testing in browser
+    window.addEventListener('DOMContentLoaded', () => {
+      masterTl.play();
+      if (audio) {
+        audio.currentTime = 0;
+        audio.play().catch(() => {});
+      }
+    });
+  </script>
+</body>
+</html>

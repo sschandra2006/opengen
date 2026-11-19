@@ -1,0 +1,175 @@
+//! A script's bundle (raea's bundle_entry: tests, renders' helper scripts, the shell's), with the engine's
+//! resolution on top of Rolldown's own, as react/js/bundle.ts did on bun's: `raea`, its subpaths and the `@raea/`
+//! packages are the SDK's sources, as sdk/tsconfig.base.json's paths name them; `bun:test`, `vitest` and `@jest/globals` are the engine's test API (sdk/react/js/shims/
+//! test.ts); `@raea/shell` is raea's own; Node's built-ins raea carries (sdk/react/js/shims/node) resolve
+//! there, one listed as a stub is a module that throws when used, any other fails the bundle with its importer named;
+//! the packages the engine carries (react, mediabunny, bevy-react...) resolve to its copies from anywhere, so a bundle
+//! has one of each, and any other bare import the importer's own folders can't satisfy falls back to them.
+use rolldown_common::ModuleType;
+use rolldown_plugin::{
+    HookLoadArgs, HookLoadOutput, HookLoadReturn, HookResolveIdArgs, HookResolveIdOutput, HookResolveIdReturn, HookUsage, Plugin, PluginContext,
+    SharedLoadPluginContext,
+};
+use std::borrow::Cow;
+use std::collections::HashMap;
+use std::path::{Path, PathBuf};
+
+/// What a script bundle resolves with
+#[derive(Debug, Clone, Default)]
+pub struct Script {
+    /// sdk/react/js: the test shim, the Node shims and the engine's node_modules
+    pub js: PathBuf,
+    /// sdk/raea/src
+    pub motion: PathBuf,
+    /// sdk/shell/src/index.ts
+    pub shell: PathBuf,
+    /// `--alias SPEC=PATH`
+    pub aliases: HashMap<String, PathBuf>,
+    /// `--node-stub a,b`
+    pub stubs: Vec<String>,
+}
+
+pub(crate) const SINGLETONS: &[&str] = &["react", "react-dom", "react-reconciler", "scheduler", "mediabunny", "bevy-react"];
+const NODE: &[&str] = &[
+    "assert", "buffer", "child_process", "crypto", "events", "fs", "fs/promises", "os", "path", "process", "stream", "url", "util", "worker_threads", "zlib", "module",
+    "net", "http", "https", "tty", "readline", "string_decoder", "perf_hooks", "async_hooks", "vm",
+];
+const STUB: &str = "\0raea-node-stub:";
+
+/// Files a script imports as their path (sdk/react's MEDIA_EXTS, as a composition imports them), plus models.
+const MEDIA: &[&str] = &["mp4", "mov", "m4v", "mp3", "wav", "m4a", "png", "jpg", "webp", "gif", "glb", "gltf"];
+
+
+#[derive(Debug)]
+pub struct ScriptResolve(pub Script);
+
+impl ScriptResolve {
+    /// `spec` as the engine's node_modules resolves it (Rolldown's resolver, from a file in sdk/react/js)
+    async fn from_engine(&self, ctx: &PluginContext, spec: &str) -> anyhow::Result<Option<HookResolveIdOutput>> {
+        let importer = self.0.js.join("_raea.js");
+        let opts = rolldown_plugin::PluginContextResolveOptions { skip_self: true, ..Default::default() };
+        match ctx.resolve(spec, Some(&importer.to_string_lossy()), Some(opts)).await? {
+            Ok(r) => Ok(Some(HookResolveIdOutput::from_id(r.id.as_str()))),
+            Err(_) => Ok(None),
+        }
+    }
+}
+
+/// A file's module id, one per file however its path was written: Rolldown keys modules by id, and its own resolver
+/// writes a path whole, so a path this plugin joins (home's "sdk/ui/src" onto a Windows folder: `D:\..\raea\sdk/ui/src\wire.ts`)
+/// must come out the same, or the file is bundled twice. On Windows that was two @raea/ui wires: the second took
+/// `__ui_deliver`, with none of the first's handlers, and every press was dropped (#51). Rebuilt from its components
+/// (one separator, no `.` or doubled ones) and without canonicalize()'s verbatim `\\?\` prefix.
+pub(crate) fn module_path(p: &Path) -> PathBuf {
+    raea_io_home::plain(p.components().collect())
+}
+
+fn path_id(p: &Path) -> Option<HookResolveIdOutput> {
+    Some(HookResolveIdOutput::from_id(module_path(p).to_string_lossy().into_owned()))
+}
+
+impl Plugin for ScriptResolve {
+    fn name(&self) -> Cow<'static, str> {
+        Cow::Borrowed("raea:script")
+    }
+
+    fn register_hook_usage(&self) -> HookUsage {
+        HookUsage::ResolveId | HookUsage::Load
+    }
+
+    async fn resolve_id(&self, ctx: &PluginContext, args: &HookResolveIdArgs<'_>) -> HookResolveIdReturn {
+        let s = &self.0;
+        let spec = args.specifier;
+        let importer = args.importer.unwrap_or("(the entry)");
+        if let Some(p) = s.aliases.get(spec) {
+            return Ok(path_id(p));
+        }
+        match spec {
+            "bun:test" | "vitest" | "@jest/globals" => return Ok(path_id(&s.js.join("shims/test.ts"))),
+            "@raea/shell" => return Ok(path_id(&s.shell)),
+            _ => {}
+        }
+        // the SDK by its names (docs/sdk.feature S1, S1d): "raea" is its prelude, "raea/<module>" a module, "@raea/<package>"
+        // a package, each where sdk/tsconfig.base.json's paths put it (sdk/ is the folder above sdk/raea/src). An
+        // `@raea/` name the list doesn't have is left to the rest (@raea/ui's own folders)
+        if spec == "raea" || spec.starts_with("raea/") || spec.starts_with("@raea/") {
+            if let Some(f) = s.motion.parent().and_then(|m| m.parent()).and_then(|sdk| raea_io_home::sdk::resolve(sdk, spec)) {
+                return Ok(path_id(&f));
+            }
+            if !spec.starts_with('@') {
+                anyhow::bail!("raea has no module \"{spec}\" in sdk/tsconfig.base.json's paths (imported by {importer})");
+            }
+            return Ok(None);
+        }
+        let node_like = spec.strip_prefix("node:").unwrap_or(spec);
+        if node_like.chars().all(|c| c.is_ascii_lowercase() || c == '_' || c == '/') && !node_like.is_empty() {
+            let name = node_like;
+            if NODE.contains(&name) {
+                let shim = s.js.join("shims/node").join(format!("{name}.ts"));
+                if shim.is_file() {
+                    return Ok(path_id(&shim));
+                }
+                if s.stubs.iter().any(|x| x == name) {
+                    return Ok(Some(HookResolveIdOutput::from_id(format!("{STUB}{name}"))));
+                }
+                anyhow::bail!("\"{spec}\" is a Node built-in, which raea's V8 doesn't have (imported by {importer}); use the package's browser build, or --node-stub {name}");
+            }
+        }
+        // packages the engine itself carries resolve to its copies from anywhere (one React, one mediabunny); other
+        // bare imports resolve from the importer's own folders, then fall back to the engine's node_modules
+        let bare = spec.starts_with('@') || spec.starts_with(|c: char| c.is_ascii_lowercase());
+        let (Some(imp), true) = (args.importer, bare) else { return Ok(None) };
+        let pkg = if spec.starts_with('@') { spec.splitn(3, '/').take(2).collect::<Vec<_>>().join("/") } else { spec.split('/').next().unwrap_or(spec).to_string() };
+        let fallback = s.js.join("node_modules");
+        if SINGLETONS.contains(&pkg.as_str()) && fallback.join(&pkg).exists() {
+            return self.from_engine(ctx, spec).await;
+        }
+        let mut d = Path::new(imp).parent();
+        while let Some(here) = d {
+            if here.join("node_modules").join(&pkg).exists() {
+                return Ok(None);
+            }
+            d = here.parent();
+        }
+        if fallback.join(&pkg).exists() {
+            return self.from_engine(ctx, spec).await;
+        }
+        Ok(None)
+    }
+
+    async fn load(&self, _ctx: SharedLoadPluginContext, args: &HookLoadArgs<'_>) -> HookLoadReturn {
+        // media imported as a module is its path, as in a composition (`import take from "./take.mp4"`)
+        let path = args.id.split(['?', '#']).next().unwrap_or(args.id);
+        let ext = Path::new(path).extension().and_then(|e| e.to_str()).map(str::to_ascii_lowercase);
+        if ext.as_deref().is_some_and(|e| MEDIA.contains(&e)) {
+            let code = format!("export default {};\n", serde_json::to_string(path)?);
+            return Ok(Some(HookLoadOutput { code: code.into(), module_type: Some(ModuleType::Js), ..Default::default() }));
+        }
+        let Some(name) = args.id.strip_prefix(STUB) else { return Ok(None) };
+        let code = format!(
+            "const m = new Proxy({{}}, {{ get: (_t, k) => k === \"__esModule\" ? true : k === \"default\" ? m : () => {{ throw new Error(\"node:{name}.\" + String(k) + \" isn't available in raea's V8\"); }} }}); export default m;\n"
+        );
+        Ok(Some(HookLoadOutput { code: code.into(), module_type: Some(ModuleType::Js), ..Default::default() }))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::module_path;
+    use std::path::Path;
+
+    /// One file, two spellings of its path (what a joined path and Rolldown's resolver write): one module id (#51)
+    #[test]
+    fn a_file_has_one_module_id_however_its_path_is_written() {
+        let joined = Path::new("/opt/raea/share/raea").join("sdk/ui/./src").join("wire.ts");
+        let resolved = Path::new("/opt/raea/share/raea/sdk//ui/src/wire.ts");
+        assert_eq!(module_path(&joined), module_path(resolved));
+        assert_eq!(module_path(&joined), Path::new("/opt/raea/share/raea/sdk/ui/src/wire.ts"));
+        #[cfg(windows)]
+        {
+            let mixed = Path::new(r"D:\a\raea\share\raea").join("sdk/ui/src").join("wire.ts");
+            assert_eq!(module_path(&mixed), Path::new(r"D:\a\raea\share\raea\sdk\ui\src\wire.ts"));
+            assert_eq!(module_path(Path::new(r"\\?\D:\a\raea\share\raea\sdk\ui\src\wire.ts")), Path::new(r"D:\a\raea\share\raea\sdk\ui\src\wire.ts"));
+        }
+    }
+}

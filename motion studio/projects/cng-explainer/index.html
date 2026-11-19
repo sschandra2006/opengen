@@ -1,0 +1,1488 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Compressed Natural Gas (CNG) — Composition, Properties &amp; Applications</title>
+  <meta name="viewport" content="width=1920, height=1080, initial-scale=1.0" />
+  <script src="assets/gsap.min.js"></script>
+  <style>
+    :root {
+      --cyan: #67f3ff;
+      --cyan-strong: #00e5ff;
+      --glass-bg: rgba(7, 25, 36, 0.62);
+      --glass-border: rgba(124, 245, 255, 0.72);
+      --font-sans: 'Inter', 'Outfit', 'Segoe UI', system-ui, -apple-system, sans-serif;
+      --font-mono: 'Space Mono', 'Consolas', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    html, body {
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      background: #030b12;
+      font-family: var(--font-sans);
+      color: #ffffff;
+    }
+
+    #composition-root {
+      position: relative;
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      background: #030b12;
+    }
+
+    .scene {
+      position: absolute;
+      inset: 0;
+      width: 1920px;
+      height: 1080px;
+      opacity: 0;
+      overflow: hidden;
+    }
+
+    .bg-plate {
+      position: absolute;
+      inset: -40px;
+      width: calc(100% + 80px);
+      height: calc(100% + 80px);
+      object-fit: cover;
+      transform-origin: center center;
+      filter: contrast(1.03) saturate(1.04);
+    }
+
+    .scene-vignette {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at 32% 50%, transparent 45%, rgba(2, 10, 18, 0.42) 100%),
+        linear-gradient(180deg, rgba(2, 12, 20, 0.18) 0%, transparent 18%, transparent 80%, rgba(2, 10, 18, 0.48) 100%);
+      pointer-events: none;
+    }
+
+    #fx-canvas {
+      position: absolute;
+      inset: 0;
+      width: 1920px;
+      height: 1080px;
+      pointer-events: none;
+      z-index: 40;
+    }
+
+    .hud-panel {
+      position: relative;
+      background: var(--glass-bg);
+      border: 1.5px solid var(--glass-border);
+      border-radius: 14px;
+      backdrop-filter: blur(10px);
+      box-shadow:
+        0 0 36px rgba(0, 229, 255, 0.22),
+        inset 0 0 28px rgba(103, 243, 255, 0.12);
+      overflow: hidden;
+    }
+
+    .hud-panel::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        rgba(103, 243, 255, 0.03) 0px,
+        rgba(103, 243, 255, 0.03) 1px,
+        transparent 1px,
+        transparent 4px
+      );
+      pointer-events: none;
+    }
+
+    .hud-scanline {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, transparent, #a6fbff, #ffffff, #a6fbff, transparent);
+      box-shadow: 0 0 22px 5px rgba(103, 243, 255, 0.85);
+      opacity: 0;
+      pointer-events: none;
+      z-index: 5;
+    }
+
+    .hud-corners::after {
+      content: "";
+      position: absolute;
+      inset: 8px;
+      border-radius: 8px;
+      border: 1px solid rgba(166, 251, 255, 0.22);
+      pointer-events: none;
+    }
+
+    .hud-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 20px 28px 14px;
+      border-bottom: 1px solid rgba(103, 243, 255, 0.25);
+    }
+
+    .hud-bar {
+      width: 5px;
+      height: 42px;
+      border-radius: 3px;
+      background: var(--cyan);
+      box-shadow: 0 0 14px var(--cyan-strong);
+      flex-shrink: 0;
+    }
+
+    .hud-title {
+      font-size: 30px;
+      font-weight: 800;
+      letter-spacing: 1.4px;
+      text-transform: uppercase;
+      color: #e8fcff;
+      text-shadow: 0 0 16px rgba(0, 229, 255, 0.6);
+      line-height: 1.12;
+    }
+
+    .hud-sub {
+      font-family: var(--font-mono);
+      font-size: 16px;
+      color: #8eeeff;
+      letter-spacing: 1px;
+      margin-top: 4px;
+    }
+
+    .lower-third {
+      position: absolute;
+      left: 96px;
+      bottom: 72px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      padding: 18px 34px 18px 22px;
+      background: linear-gradient(90deg, rgba(6, 16, 24, 0.86) 0%, rgba(6, 16, 24, 0.58) 85%, transparent 100%);
+      border-radius: 8px;
+      z-index: 60;
+      opacity: 0;
+    }
+
+    .lt-accent {
+      width: 5px;
+      height: 68px;
+      background: #ffffff;
+      border-radius: 3px;
+      box-shadow: 0 0 14px rgba(103, 243, 255, 0.8);
+    }
+
+    .lt-name {
+      font-size: 34px;
+      font-weight: 700;
+      color: #ffffff;
+      letter-spacing: 0.3px;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.7);
+    }
+
+    .lt-role {
+      font-size: 22px;
+      font-weight: 500;
+      color: #c8eff6;
+      margin-top: 3px;
+    }
+
+    /* Scene 1 */
+    #s1-hud {
+      position: absolute;
+      right: 84px;
+      top: 120px;
+      width: 860px;
+      height: 760px;
+      z-index: 50;
+      opacity: 0;
+    }
+
+    .s1-diagram-wrap {
+      padding: 18px 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .s1-pillars {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-top: 4px;
+    }
+
+    .pillar-card {
+      padding: 16px 16px;
+      border-radius: 10px;
+      background: rgba(8, 42, 58, 0.65);
+      border: 1.5px solid rgba(103, 243, 255, 0.32);
+      opacity: 0;
+    }
+
+    .pillar-tag {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--cyan);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+
+    .pillar-head {
+      font-size: 22px;
+      font-weight: 700;
+      margin-top: 6px;
+      color: #ffffff;
+    }
+
+    .pillar-desc {
+      font-size: 16px;
+      color: #bfeef7;
+      margin-top: 6px;
+      line-height: 1.35;
+    }
+
+    /* Scene 2 */
+    #s2-float-title {
+      position: absolute;
+      right: 88px;
+      top: 118px;
+      width: 820px;
+      padding: 24px 32px;
+      border-radius: 16px;
+      background: radial-gradient(ellipse at 35% 50%, rgba(4, 24, 38, 0.78) 0%, rgba(4, 24, 38, 0.42) 65%, transparent 100%);
+      text-align: left;
+      z-index: 55;
+      opacity: 0;
+    }
+
+    .float-kicker {
+      display: inline-block;
+      font-family: var(--font-mono);
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 2.5px;
+      color: #031520;
+      background: var(--cyan);
+      padding: 6px 16px;
+      border-radius: 4px;
+      margin-bottom: 14px;
+      box-shadow: 0 0 22px rgba(0, 229, 255, 0.75);
+    }
+
+    .float-h1 {
+      font-size: 56px;
+      font-weight: 900;
+      line-height: 1.08;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: #e9fdff;
+      text-shadow:
+        0 0 26px rgba(0, 229, 255, 0.8),
+        0 4px 18px rgba(0, 0, 0, 0.85);
+    }
+
+    #s2-compress-hud {
+      position: absolute;
+      right: 88px;
+      bottom: 92px;
+      width: 820px;
+      padding: 24px 30px;
+      z-index: 55;
+      opacity: 0;
+    }
+
+    .compress-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+
+    .vol-box {
+      flex: 1;
+      padding: 18px 22px;
+      border-radius: 10px;
+      background: rgba(4, 24, 36, 0.78);
+      border: 1px solid rgba(103, 243, 255, 0.32);
+    }
+
+    .vol-label {
+      font-family: var(--font-mono);
+      font-size: 15px;
+      color: #93ebfa;
+      letter-spacing: 1px;
+    }
+
+    .vol-val {
+      font-size: 36px;
+      font-weight: 800;
+      color: #ffffff;
+      margin-top: 6px;
+      white-space: nowrap;
+    }
+
+    .vol-val span {
+      font-size: 20px;
+      color: var(--cyan);
+      font-weight: 600;
+    }
+
+    /* Scene 3 */
+    #s3-hud {
+      position: absolute;
+      right: 80px;
+      bottom: 70px;
+      width: 860px;
+      z-index: 55;
+      opacity: 0;
+    }
+
+    .comp-body {
+      padding: 20px 28px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .comp-formula-strip {
+      font-family: var(--font-mono);
+      font-size: 21px;
+      font-weight: 700;
+      color: #e6fcff;
+      letter-spacing: 0.5px;
+      padding: 12px 18px;
+      background: rgba(0, 229, 255, 0.14);
+      border: 1px solid rgba(103, 243, 255, 0.45);
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    .comp-bars {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px 24px;
+    }
+
+    .bar-item-head {
+      display: flex;
+      justify-content: space-between;
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: #ddfaff;
+    }
+
+    .bar-track {
+      height: 12px;
+      background: rgba(255, 255, 255, 0.14);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #00c8ff, #8cf9ff);
+      box-shadow: 0 0 14px rgba(0, 229, 255, 0.7);
+      transform-origin: left center;
+      transform: scaleX(0);
+    }
+
+    /* Scene 4 */
+    #s4-hud {
+      position: absolute;
+      right: 76px;
+      top: 90px;
+      width: 860px;
+      z-index: 55;
+      opacity: 0;
+    }
+
+    .prop-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+      padding: 20px 26px 24px;
+    }
+
+    .prop-chip {
+      padding: 14px 18px;
+      border-radius: 10px;
+      background: rgba(6, 36, 52, 0.76);
+      border: 1px solid rgba(103, 243, 255, 0.35);
+      opacity: 0;
+    }
+
+    .prop-k {
+      font-family: var(--font-mono);
+      font-size: 14px;
+      color: var(--cyan);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .prop-v {
+      font-size: 22px;
+      font-weight: 700;
+      color: #ffffff;
+      margin-top: 4px;
+    }
+
+    #s4-macro-overlay {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 50% 46%, rgba(6, 32, 52, 0.94) 0%, rgba(2, 9, 16, 0.98) 100%);
+      opacity: 0;
+      z-index: 35;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      padding-bottom: 84px;
+    }
+
+    #s4-macro-badge {
+      padding: 20px 44px;
+      border-radius: 12px;
+      background: rgba(4, 24, 38, 0.86);
+      border: 1.5px solid var(--cyan);
+      box-shadow: 0 0 36px rgba(0, 229, 255, 0.35);
+      text-align: center;
+      z-index: 56;
+      opacity: 0;
+    }
+
+    /* Scene 5 Dual Glass Kiosks */
+    #s5-kiosk-left {
+      position: absolute;
+      left: 294px;
+      top: 214px;
+      width: 286px;
+      height: 500px;
+      padding: 22px 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      background: rgba(5, 22, 34, 0.84);
+      border-radius: 8px;
+      border: 1px solid rgba(103, 243, 255, 0.45);
+      z-index: 50;
+      opacity: 0;
+    }
+
+    #s5-kiosk-right {
+      position: absolute;
+      left: 1334px;
+      top: 214px;
+      width: 286px;
+      height: 500px;
+      padding: 22px 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      background: rgba(5, 22, 34, 0.72);
+      border-radius: 8px;
+      border: 1px solid rgba(103, 243, 255, 0.45);
+      z-index: 50;
+      opacity: 0;
+    }
+
+    .kiosk-head {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--cyan);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      text-align: center;
+      border-bottom: 1px solid rgba(103, 243, 255, 0.28);
+      padding-bottom: 10px;
+    }
+
+    .kiosk-stat {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .kiosk-stat-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 16px;
+      font-weight: 600;
+      color: #e2fbff;
+    }
+
+    .kiosk-bar-bg {
+      height: 10px;
+      background: rgba(255, 255, 255, 0.14);
+      border-radius: 5px;
+      overflow: hidden;
+    }
+
+    .kiosk-bar-val {
+      height: 100%;
+      border-radius: 5px;
+      background: linear-gradient(90deg, #00e5ff, #34d399);
+      transform-origin: left center;
+      transform: scaleX(0);
+    }
+
+    .sg-compare {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .sg-box {
+      padding: 12px 14px;
+      border-radius: 8px;
+      background: rgba(5, 28, 42, 0.90);
+      border: 1px solid rgba(103, 243, 255, 0.42);
+      text-align: center;
+    }
+
+    .sg-num {
+      font-family: var(--font-mono);
+      font-size: 32px;
+      font-weight: 800;
+      color: #ffffff;
+    }
+
+    /* Scene 6 */
+    #s6-hud {
+      position: absolute;
+      right: 110px;
+      top: 90px;
+      width: 820px;
+      z-index: 55;
+      opacity: 0;
+    }
+
+    .s6-metrics {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      padding: 20px 26px 24px;
+    }
+
+    .s6-card {
+      padding: 18px 20px;
+      border-radius: 10px;
+      background: rgba(28, 16, 12, 0.78);
+      border: 1.5px solid rgba(255, 176, 32, 0.55);
+    }
+
+    .s6-card-k {
+      font-family: var(--font-mono);
+      font-size: 15px;
+      color: #ffd180;
+      letter-spacing: 1px;
+    }
+
+    .s6-card-v {
+      font-size: 36px;
+      font-weight: 900;
+      color: #ffffff;
+      margin-top: 6px;
+    }
+
+    .s6-card-sub {
+      font-size: 16px;
+      color: #ffe2b3;
+      margin-top: 4px;
+    }
+
+    #s6-alert-banner {
+      position: absolute;
+      right: 110px;
+      bottom: 84px;
+      width: 820px;
+      padding: 18px 28px;
+      border-radius: 10px;
+      background: rgba(90, 18, 12, 0.86);
+      border: 2px solid #ff6b4a;
+      box-shadow: 0 0 36px rgba(255, 85, 45, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 56;
+      opacity: 0;
+    }
+
+    /* Scene 7 */
+    #s7-hud {
+      position: absolute;
+      right: 76px;
+      top: 100px;
+      width: 880px;
+      z-index: 55;
+      opacity: 0;
+    }
+
+    .app-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 18px;
+      padding: 24px 28px 28px;
+    }
+
+    .app-card {
+      padding: 22px 22px;
+      border-radius: 12px;
+      background: rgba(6, 38, 56, 0.76);
+      border: 1.5px solid rgba(103, 243, 255, 0.35);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      opacity: 0;
+    }
+
+    .app-icon-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .app-icon {
+      width: 46px;
+      height: 46px;
+      border-radius: 10px;
+      background: rgba(0, 229, 255, 0.18);
+      border: 1px solid rgba(103, 243, 255, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .app-title {
+      font-size: 22px;
+      font-weight: 800;
+      color: #ffffff;
+    }
+
+    .app-desc {
+      font-size: 17px;
+      color: #c5f4fc;
+      line-height: 1.4;
+    }
+
+    #top-topic-pill {
+      position: absolute;
+      top: 32px;
+      left: 48px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 20px;
+      border-radius: 999px;
+      background: rgba(5, 20, 30, 0.72);
+      border: 1px solid rgba(103, 243, 255, 0.45);
+      backdrop-filter: blur(8px);
+      z-index: 70;
+      font-family: var(--font-mono);
+      font-size: 15px;
+      letter-spacing: 1px;
+      color: #b4f8ff;
+    }
+
+    .pill-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--cyan);
+      box-shadow: 0 0 12px var(--cyan-strong);
+    }
+  </style>
+</head>
+<body>
+  <div id="composition-root" data-duration="117.11" data-fps="30" data-width="1920" data-height="1080" data-composition-id="cng-explainer-1080p">
+    <audio id="master-audio" src="audio/master_audio.mp3" data-start="0" data-duration="117.11" preload="auto"></audio>
+
+    <div id="top-topic-pill">
+      <div class="pill-dot"></div>
+      <span id="top-stage-label">COMPRESSED NATURAL GAS (CNG) &bull; OVERVIEW</span>
+    </div>
+
+    <!-- SCENE 1: INTRO & OVERVIEW -->
+    <div class="scene" id="scene-1">
+      <video class="bg-plate" id="bg-1" src="assets/scene1.mp4" data-start="0" data-duration="16.89" muted playsinline preload="auto"></video>
+      <div class="scene-vignette"></div>
+
+      <div class="lower-third" id="s1-lt">
+        <div class="lt-accent"></div>
+        <div>
+          <div class="lt-name">Dr. Chander Amgoth Pawar</div>
+          <div class="lt-role">Chemistry Faculty, VNR VJIET</div>
+        </div>
+      </div>
+
+      <div class="hud-panel hud-corners" id="s1-hud">
+        <div class="hud-scanline" id="s1-scan"></div>
+        <div class="hud-header">
+          <div class="hud-bar"></div>
+          <div>
+            <div class="hud-title">COMPRESSED NATURAL GAS (CNG)</div>
+            <div class="hud-sub">CLEAN HIGH-PRESSURE ENERGY CARRIER &bull; 200&ndash;250 BAR</div>
+          </div>
+        </div>
+
+        <div class="s1-diagram-wrap">
+          <svg viewBox="0 0 800 320" width="100%" height="310">
+            <defs>
+              <linearGradient id="cylGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.35" />
+                <stop offset="50%" stop-color="#0ea5e9" stop-opacity="0.7" />
+                <stop offset="100%" stop-color="#0369a1" stop-opacity="0.4" />
+              </linearGradient>
+              <linearGradient id="steelWall" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#cbd5e1" />
+                <stop offset="50%" stop-color="#64748b" />
+                <stop offset="100%" stop-color="#334155" />
+              </linearGradient>
+            </defs>
+
+            <g stroke="rgba(103,243,255,0.14)" stroke-width="1">
+              <line x1="40" y1="50" x2="760" y2="50" />
+              <line x1="40" y1="160" x2="760" y2="160" />
+              <line x1="40" y1="270" x2="760" y2="270" />
+              <line x1="200" y1="20" x2="200" y2="300" />
+              <line x1="400" y1="20" x2="400" y2="300" />
+              <line x1="600" y1="20" x2="600" y2="300" />
+            </g>
+
+            <path d="M 45 160 L 145 160" stroke="#67f3ff" stroke-width="8" stroke-linecap="round" opacity="0.8" />
+            <text x="45" y="138" fill="#9bfaff" font-family="Space Mono, monospace" font-size="14">NATURAL GAS</text>
+            <text x="45" y="196" fill="#67f3ff" font-family="Space Mono, monospace" font-size="13">CH4 + LIGHT HC</text>
+
+            <rect x="145" y="112" width="110" height="96" rx="12" fill="rgba(12,68,92,0.85)" stroke="#67f3ff" stroke-width="2" />
+            <text x="200" y="155" text-anchor="middle" fill="#ffffff" font-family="Inter, sans-serif" font-weight="700" font-size="16">200&ndash;250</text>
+            <text x="200" y="178" text-anchor="middle" fill="#67f3ff" font-family="Space Mono, monospace" font-size="14">BAR</text>
+
+            <path d="M 255 160 L 325 160" stroke="#67f3ff" stroke-width="8" stroke-linecap="round" />
+
+            <rect x="325" y="75" width="330" height="170" rx="68" fill="none" stroke="url(#steelWall)" stroke-width="14" />
+            <rect x="336" y="86" width="308" height="148" rx="58" fill="url(#cylGrad)" stroke="#67f3ff" stroke-width="1.5" />
+            <text x="490" y="148" text-anchor="middle" fill="#ffffff" font-family="Inter, sans-serif" font-weight="800" font-size="24">HIGH-PRESSURE</text>
+            <text x="490" y="180" text-anchor="middle" fill="#a6fbff" font-family="Space Mono, monospace" font-size="18">CNG STORAGE (&lt;1% VOL)</text>
+
+            <path d="M 655 160 L 755 160" stroke="#34d399" stroke-width="8" stroke-linecap="round" />
+            <circle cx="695" cy="160" r="16" fill="#062c3d" stroke="#34d399" stroke-width="3" />
+            <text x="695" y="210" text-anchor="middle" fill="#6ee7b7" font-family="Space Mono, monospace" font-size="13">CLEAN FUEL OUT</text>
+          </svg>
+
+          <div class="s1-pillars">
+            <div class="pillar-card" id="p-comp">
+              <div class="pillar-tag">01 &bull; COMPOSITION</div>
+              <div class="pillar-head">85&ndash;95% Methane</div>
+              <div class="pillar-desc">CH<sub>4</sub> primary fuel with minor ethane, propane &amp; inert gases</div>
+            </div>
+            <div class="pillar-card" id="p-prop">
+              <div class="pillar-tag">02 &bull; PROPERTIES</div>
+              <div class="pillar-head">Octane 120&ndash;130</div>
+              <div class="pillar-desc">Colorless, lighter than air (0.55), auto-ignition ~540&deg;C</div>
+            </div>
+            <div class="pillar-card" id="p-app">
+              <div class="pillar-tag">03 &bull; APPLICATIONS</div>
+              <div class="pillar-head">Clean Mobility+</div>
+              <div class="pillar-desc">Transit, industry, CGD pipelines &amp; renewable Bio-CNG</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCENE 2: COMPRESSION & CONTEXT -->
+    <div class="scene" id="scene-2">
+      <video class="bg-plate" id="bg-2" src="assets/scene2.mp4" data-start="16.89" data-duration="15.40" muted playsinline preload="auto"></video>
+      <div class="scene-vignette"></div>
+
+      <div id="s2-float-title">
+        <div class="float-kicker">VOLUMETRIC REDUCTION</div>
+        <div class="float-h1">HIGH-PRESSURE<br />CLEAN NATURAL GAS</div>
+      </div>
+
+      <div class="hud-panel hud-corners" id="s2-compress-hud">
+        <div class="compress-row">
+          <div class="vol-box">
+            <div class="vol-label">ATMOSPHERIC PRESSURE</div>
+            <div class="vol-val">1 <span>bar</span></div>
+            <div style="font-size:16px; color:#bdecf5; margin-top:6px;">100% Standard Gas Volume</div>
+          </div>
+          <div style="display:flex; align-items:center; justify-content:center; width:44px; flex-shrink:0;">
+            <svg viewBox="0 0 24 24" width="38" height="38" fill="#67f3ff"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>
+          </div>
+          <div class="vol-box" style="border-color:rgba(103,243,255,0.75); background:rgba(8,52,72,0.85);">
+            <div class="vol-label">COMPRESSED CNG STATE</div>
+            <div class="vol-val">200&ndash;250 <span>bar</span></div>
+            <div style="font-size:16px; color:#6ee7b7; margin-top:6px;">&lt; 1% Original Volume &bull; Portable</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCENE 3: CHEMICAL COMPOSITION -->
+    <div class="scene" id="scene-3">
+      <video class="bg-plate" id="bg-3" src="assets/scene3.mp4" data-start="32.29" data-duration="16.99" muted playsinline preload="auto"></video>
+      <div class="scene-vignette"></div>
+
+      <div class="hud-panel hud-corners" id="s3-hud">
+        <div class="hud-scanline" id="s3-scan"></div>
+        <div class="hud-header">
+          <div class="hud-bar"></div>
+          <div>
+            <div class="hud-title">CNG CHEMICAL COMPOSITION</div>
+            <div class="hud-sub">PREDOMINANTLY METHANE WITH TRACE HYDROCARBONS</div>
+          </div>
+        </div>
+
+        <div class="comp-body">
+          <div class="comp-formula-strip">
+            CH<sub>4</sub> (85&ndash;95%) &bull; C<sub>2</sub>H<sub>6</sub> (2&ndash;5%) &bull; C<sub>3</sub>H<sub>8</sub> (~1%) &bull; N<sub>2</sub> &amp; CO<sub>2</sub> (&lt;2%)
+          </div>
+          <div class="comp-bars">
+            <div>
+              <div class="bar-item-head"><span>Methane (CH<sub>4</sub>)</span><span style="color:#67f3ff">85&ndash;95%</span></div>
+              <div class="bar-track"><div class="bar-fill" id="bar-ch4" style="width:92%;"></div></div>
+            </div>
+            <div>
+              <div class="bar-item-head"><span>Ethane (C<sub>2</sub>H<sub>6</sub>)</span><span style="color:#fbbf24">2&ndash;5%</span></div>
+              <div class="bar-track"><div class="bar-fill" id="bar-c2h6" style="width:18%; background:linear-gradient(90deg,#f59e0b,#fde68a);"></div></div>
+            </div>
+            <div>
+              <div class="bar-item-head"><span>Propane &amp; Heavy HC</span><span style="color:#fb923c">~1%</span></div>
+              <div class="bar-track"><div class="bar-fill" id="bar-c3h8" style="width:9%; background:linear-gradient(90deg,#ea580c,#fdba74);"></div></div>
+            </div>
+            <div>
+              <div class="bar-item-head"><span>Inerts (N<sub>2</sub>, CO<sub>2</sub>)</span><span style="color:#94a3b8">&lt; 2%</span></div>
+              <div class="bar-track"><div class="bar-fill" id="bar-inert" style="width:12%; background:linear-gradient(90deg,#64748b,#cbd5e1);"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCENE 4: PHYSICAL & COMBUSTION PROPERTIES -->
+    <div class="scene" id="scene-4">
+      <video class="bg-plate" id="bg-4" src="assets/scene4.mp4" data-start="49.28" data-duration="16.63" muted playsinline preload="auto"></video>
+      <div class="scene-vignette"></div>
+
+      <div id="s4-macro-overlay">
+        <div id="s4-macro-badge">
+          <div style="font-family:var(--font-mono); font-size:18px; color:#67f3ff; letter-spacing:2px;">CLEAN OXIDATION &bull; HIGH ANTI-KNOCK STABILITY</div>
+          <div style="font-size:38px; font-weight:900; color:#ffffff; margin-top:6px;">CH<sub>4</sub> + 2O<sub>2</sub> &rarr; CO<sub>2</sub> + 2H<sub>2</sub>O + ENERGY</div>
+        </div>
+      </div>
+
+      <div class="hud-panel hud-corners" id="s4-hud">
+        <div class="hud-scanline" id="s4-scan"></div>
+        <div class="hud-header">
+          <div class="hud-bar"></div>
+          <div>
+            <div class="hud-title">PHYSICAL &amp; COMBUSTION PROPERTIES</div>
+            <div class="hud-sub">TYPE-IV COMPOSITE CYLINDER &bull; CLEAN HIGH-OCTANE FUEL</div>
+          </div>
+        </div>
+        <div class="prop-grid">
+          <div class="prop-chip" id="prop-1">
+            <div class="prop-k">Appearance &amp; Toxicity</div>
+            <div class="prop-v">Colorless &amp; Non-Toxic</div>
+          </div>
+          <div class="prop-chip" id="prop-2">
+            <div class="prop-k">Leak Detection</div>
+            <div class="prop-v">Odorized w/ Mercaptan</div>
+          </div>
+          <div class="prop-chip" id="prop-3">
+            <div class="prop-k">Octane Rating (RON)</div>
+            <div class="prop-v" style="color:#67f3ff;">120 &ndash; 130</div>
+          </div>
+          <div class="prop-chip" id="prop-4">
+            <div class="prop-k">Calorific Value</div>
+            <div class="prop-v" style="color:#6ee7b7;">~50 &ndash; 55 MJ/kg</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCENE 5: DUAL COMPARISON KIOSKS -->
+    <div class="scene" id="scene-5">
+      <video class="bg-plate" id="bg-5" src="assets/scene5.mp4" data-start="65.91" data-duration="16.22" muted playsinline preload="auto"></video>
+      <div class="scene-vignette"></div>
+
+      <div id="s5-kiosk-left">
+        <div class="kiosk-head">CLEAN COMBUSTION</div>
+        <div style="text-align:center;">
+          <svg viewBox="0 0 160 130" width="140" height="115">
+            <path d="M80 15 C105 48 118 75 104 102 C95 118 65 118 56 102 C42 75 55 48 80 15 Z" fill="#00e5ff" opacity="0.85" />
+            <path d="M80 42 C94 64 100 82 92 98 C86 108 74 108 68 98 C60 82 66 64 80 42 Z" fill="#e0fcff" />
+          </svg>
+          <div style="font-size:15px; color:#9ef7ff; font-family:Space Mono,monospace;">LOW SOOT &amp; CO</div>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:14px;">
+          <div class="kiosk-stat">
+            <div class="kiosk-stat-row"><span>CO Reduction</span><span style="color:#34d399">-85%</span></div>
+            <div class="kiosk-bar-bg"><div class="kiosk-bar-val" id="k-bar-co" style="width:85%;"></div></div>
+          </div>
+          <div class="kiosk-stat">
+            <div class="kiosk-stat-row"><span>Particulates (PM)</span><span style="color:#34d399">-95%</span></div>
+            <div class="kiosk-bar-bg"><div class="kiosk-bar-val" id="k-bar-pm" style="width:95%;"></div></div>
+          </div>
+          <div class="kiosk-stat">
+            <div class="kiosk-stat-row"><span>CO<sub>2</sub> vs Petrol</span><span style="color:#67f3ff">-25%</span></div>
+            <div class="kiosk-bar-bg"><div class="kiosk-bar-val" id="k-bar-co2" style="width:48%;"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="s5-kiosk-right">
+        <div class="kiosk-head">LIGHTER THAN AIR</div>
+        <div class="sg-compare">
+          <div class="sg-box">
+            <div style="font-family:Space Mono,monospace; font-size:13px; color:#67f3ff;">CNG SPECIFIC GRAVITY</div>
+            <div class="sg-num" style="color:#67f3ff;">0.55</div>
+            <div style="font-size:14px; color:#c8f8ff;">Rises &amp; Disperses Upward</div>
+          </div>
+          <div class="sg-box" style="background:rgba(15,28,40,0.88); border-color:rgba(255,255,255,0.28);">
+            <div style="font-family:Space Mono,monospace; font-size:13px; color:#cbd5e1;">AIR REFERENCE</div>
+            <div class="sg-num" style="color:#cbd5e1;">1.00</div>
+            <div style="font-size:14px; color:#94a3b8;">No Ground Pooling</div>
+          </div>
+        </div>
+        <div style="text-align:center; padding:10px; border-radius:8px; background:rgba(52,211,153,0.18); border:1px solid #34d399; font-size:15px; font-weight:700; color:#6ee7b7;">
+          RAPID SAFE DISPERSION
+        </div>
+      </div>
+    </div>
+
+    <!-- SCENE 6: SAFETY & FLAMMABILITY LIMITS -->
+    <div class="scene" id="scene-6">
+      <video class="bg-plate" id="bg-6" src="assets/scene6.mp4" data-start="82.13" data-duration="17.32" muted playsinline preload="auto"></video>
+      <div class="scene-vignette"></div>
+
+      <div class="hud-panel hud-corners" id="s6-hud" style="border-color:rgba(255,176,32,0.72); background:rgba(24,14,10,0.72);">
+        <div class="hud-header" style="border-bottom-color:rgba(255,176,32,0.3);">
+          <div class="hud-bar" style="background:#ffb020; box-shadow:0 0 14px #ffb020;"></div>
+          <div>
+            <div class="hud-title" style="color:#fff4dc;">SAFETY &amp; FLAMMABILITY LIMITS</div>
+            <div class="hud-sub" style="color:#ffd180;">HIGH IGNITION THRESHOLD &bull; ENGINEERED CONTAINMENT</div>
+          </div>
+        </div>
+        <div class="s6-metrics">
+          <div class="s6-card">
+            <div class="s6-card-k">FLAMMABILITY IN AIR</div>
+            <div class="s6-card-v" style="color:#ffb020;">5% &ndash; 15%</div>
+            <div class="s6-card-sub">Narrow ignition window by volume</div>
+          </div>
+          <div class="s6-card">
+            <div class="s6-card-k">AUTO-IGNITION TEMP</div>
+            <div class="s6-card-v" style="color:#ff8a4c;">~540&deg;C</div>
+            <div class="s6-card-sub">Over 2&times; Petrol (~250&deg;C)</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="s6-alert-banner">
+        <div>
+          <div style="font-family:var(--font-mono); font-size:15px; color:#ffb4a2; letter-spacing:1.5px;">OVERPRESSURE PROTECTION ACTIVE</div>
+          <div style="font-size:26px; font-weight:800; color:#ffffff; margin-top:2px;">PRESSURE RELIEF DEVICE (PRD) VENTING</div>
+        </div>
+        <div style="font-family:var(--font-mono); font-size:20px; font-weight:700; color:#ff9e80; border:1.5px solid #ff8a65; padding:8px 16px; border-radius:8px;">SAFE DISPERSAL</div>
+      </div>
+    </div>
+
+    <!-- SCENE 7: APPLICATIONS & FUTURE -->
+    <div class="scene" id="scene-7">
+      <video class="bg-plate" id="bg-7" src="assets/scene7.mp4" data-start="99.45" data-duration="17.66" muted playsinline preload="auto"></video>
+      <div class="scene-vignette"></div>
+
+      <div class="hud-panel hud-corners" id="s7-hud">
+        <div class="hud-scanline" id="s7-scan"></div>
+        <div class="hud-header">
+          <div class="hud-bar"></div>
+          <div>
+            <div class="hud-title">MAJOR CNG APPLICATIONS</div>
+            <div class="hud-sub">CLEAN MOBILITY &bull; INDUSTRY &bull; CITY GAS &bull; BIO-CNG</div>
+          </div>
+        </div>
+
+        <div class="app-grid">
+          <div class="app-card" id="app-1">
+            <div class="app-icon-row">
+              <div class="app-icon">
+                <svg viewBox="0 0 24 24" width="26" height="26" fill="#67f3ff"><path d="M4 16c0 .88.39 1.67 1 2.22V20c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h8v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1.78c.61-.55 1-1.34 1-2.22V6c0-3.5-3.58-4-8-4s-8 .5-8 4v10zm3.5 1c-.83 0-1.5-.67-1.5-1.5S6.67 14 7.5 14s1.5.67 1.5 1.5S8.33 17 7.5 17zm9 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm1.5-6H6V6h12v5z"/></svg>
+              </div>
+              <div class="app-title">Clean Transportation</div>
+            </div>
+            <div class="app-desc">City buses, auto-rickshaws, passenger cars &amp; commercial fleets.</div>
+          </div>
+
+          <div class="app-card" id="app-2">
+            <div class="app-icon-row">
+              <div class="app-icon">
+                <svg viewBox="0 0 24 24" width="26" height="26" fill="#67f3ff"><path d="M22 22H2v-2h2V10l6 4v-4l6 4V4h4v16h2v2zm-12-4h2v-2h-2v2zm4 0h2v-2h-2v2z"/></svg>
+              </div>
+              <div class="app-title">Industrial Power &amp; Heat</div>
+            </div>
+            <div class="app-desc">Boilers, ceramic kilns, metallurgy furnaces &amp; gas turbines.</div>
+          </div>
+
+          <div class="app-card" id="app-3">
+            <div class="app-icon-row">
+              <div class="app-icon">
+                <svg viewBox="0 0 24 24" width="26" height="26" fill="#67f3ff"><path d="M12 2L2 7v2h20V7L12 2zm-7 9v8H3v2h18v-2h-2v-8h-2v8h-4v-8h-2v8H7v-8H5z"/></svg>
+              </div>
+              <div class="app-title">City Gas Distribution</div>
+            </div>
+            <div class="app-desc">Mother-daughter cascade stations &amp; domestic piped supply.</div>
+          </div>
+
+          <div class="app-card" id="app-4">
+            <div class="app-icon-row">
+              <div class="app-icon">
+                <svg viewBox="0 0 24 24" width="26" height="26" fill="#34d399"><path d="M17 8C8 10 5.9 16.17 3.82 21.34L5.71 22l1-2.3A4.49 4.49 0 0 0 8 20C19 20 22 3 22 3c-1 2-8 2.25-13 3.25S2 11.5 2 13.5s1.75 3.75 1.75 3.75C7 8 17 8 17 8z"/></svg>
+              </div>
+              <div class="app-title" style="color:#6ee7b7;">Renewable Bio-CNG</div>
+            </div>
+            <div class="app-desc">Upgraded agricultural &amp; organic biogas for circular net-zero fuel.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="lower-third" id="s7-lt" style="opacity:0;">
+        <div class="lt-accent"></div>
+        <div>
+          <div class="lt-name">Compressed Natural Gas (CNG)</div>
+          <div class="lt-role">Dr. Chander Amgoth Pawar &bull; Chemistry Faculty, VNR VJIET</div>
+        </div>
+      </div>
+    </div>
+
+    <canvas id="fx-canvas" width="1920" height="1080"></canvas>
+  </div>
+
+  <script>
+    const TOTAL_DURATION = 117.11;
+    const T = {
+      s1: [0.00, 16.89],
+      s2: [16.89, 32.29],
+      s3: [32.29, 49.28],
+      s4: [49.28, 65.91],
+      s5: [65.91, 82.13],
+      s6: [82.13, 99.45],
+      s7: [99.45, 117.11],
+    };
+
+    const canvas = document.getElementById('fx-canvas');
+    const ctx = canvas.getContext('2d');
+    const stageLabel = document.getElementById('top-stage-label');
+
+    function mulberry32(a) {
+      return function() {
+        let t = a += 0x6D2B79F5;
+        t = Math.imul(t ^ t >>> 15, t | 1);
+        t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+        return ((t ^ t >>> 14) >>> 0) / 4294967296;
+      };
+    }
+
+    const rand = mulberry32(20261112);
+
+    const motes = Array.from({ length: 48 }, () => ({
+      x: rand() * 1920,
+      y: rand() * 1080,
+      r: 1.2 + rand() * 2.5,
+      vx: (rand() - 0.5) * 18,
+      vy: -8 - rand() * 14,
+      phase: rand() * Math.PI * 2,
+    }));
+
+    const TETRA_DIRS = [
+      [0, 1, 0],
+      [0.9428, -0.3333, 0],
+      [-0.4714, -0.3333, 0.8165],
+      [-0.4714, -0.3333, -0.8165],
+    ];
+
+    const molecules = Array.from({ length: 26 }, (_, idx) => ({
+      kind: idx < 21 ? 'CH4' : idx < 24 ? 'C2H6' : 'INERT',
+      bx: 1120 + rand() * 540,
+      by: 200 + rand() * 440,
+      bz: -120 + rand() * 240,
+      fx: 0.4 + rand() * 0.6,
+      fy: 0.5 + rand() * 0.6,
+      ph: rand() * Math.PI * 2,
+      rx: rand() * Math.PI * 2,
+      ry: rand() * Math.PI * 2,
+      vrx: (rand() - 0.5) * 1.4,
+      vry: (rand() - 0.5) * 1.6,
+      scale: idx < 21 ? (0.8 + rand() * 0.45) : (0.9 + rand() * 0.3),
+    }));
+
+    const plume = Array.from({ length: 110 }, () => ({
+      seed: rand(),
+      spread: (rand() - 0.5) * 260,
+      speed: 260 + rand() * 340,
+      size: 16 + rand() * 38,
+      phase: rand(),
+    }));
+
+    function drawSphere(x, y, r, coreColor, rimColor) {
+      const g = ctx.createRadialGradient(x - r * 0.32, y - r * 0.32, r * 0.1, x, y, r);
+      g.addColorStop(0, '#ffffff');
+      g.addColorStop(0.28, coreColor);
+      g.addColorStop(0.85, rimColor);
+      g.addColorStop(1, 'rgba(0,0,0,0.55)');
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fillStyle = g;
+      ctx.fill();
+    }
+
+    function drawMolecule3D(cx, cy, radius, ax, ay, kind, alpha = 1) {
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      const cosX = Math.cos(ax), sinX = Math.sin(ax);
+      const cosY = Math.cos(ay), sinY = Math.sin(ay);
+
+      function rot(v) {
+        const [x, y, z] = v;
+        const y1 = y * cosX - z * sinX;
+        const z1 = y * sinX + z * cosX;
+        const x2 = x * cosY + z1 * sinY;
+        const z2 = -x * sinY + z1 * cosY;
+        return [x2, y1, z2];
+      }
+
+      if (kind === 'CH4') {
+        const bondLen = radius * 1.95;
+        const atoms = TETRA_DIRS.map(d => {
+          const r = rot(d);
+          return { x: cx + r[0] * bondLen, y: cy + r[1] * bondLen, z: r[2], isH: true };
+        });
+        atoms.push({ x: cx, y: cy, z: 0, isH: false });
+        atoms.sort((a, b) => a.z - b.z);
+
+        ctx.strokeStyle = 'rgba(175, 248, 255, 0.72)';
+        ctx.lineWidth = Math.max(2, radius * 0.24);
+        for (const a of atoms) {
+          if (!a.isH) continue;
+          ctx.beginPath();
+          ctx.moveTo(cx, cy);
+          ctx.lineTo(a.x, a.y);
+          ctx.stroke();
+        }
+        for (const a of atoms) {
+          if (a.isH) {
+            drawSphere(a.x, a.y, radius * 0.56, '#e0faff', '#38bdf8');
+          } else {
+            drawSphere(a.x, a.y, radius * 0.92, '#22d3ee', '#0e7490');
+          }
+        }
+      } else if (kind === 'C2H6') {
+        const off = rot([0.8, 0, 0]);
+        const dx = off[0] * radius * 1.2;
+        const dy = off[1] * radius * 1.2;
+        ctx.strokeStyle = 'rgba(253, 224, 71, 0.75)';
+        ctx.lineWidth = radius * 0.26;
+        ctx.beginPath();
+        ctx.moveTo(cx - dx, cy - dy);
+        ctx.lineTo(cx + dx, cy + dy);
+        ctx.stroke();
+        drawSphere(cx - dx, cy - dy, radius * 0.78, '#fbbf24', '#b45309');
+        drawSphere(cx + dx, cy + dy, radius * 0.78, '#fbbf24', '#b45309');
+      } else {
+        drawSphere(cx, cy, radius * 0.76, '#cbd5e1', '#475569');
+      }
+      ctx.restore();
+    }
+
+    function renderDynamicCanvas(t) {
+      ctx.clearRect(0, 0, 1920, 1080);
+
+      if (t < T.s2[0]) stageLabel.textContent = 'COMPRESSED NATURAL GAS (CNG) \u2022 OVERVIEW';
+      else if (t < T.s3[0]) stageLabel.textContent = 'STEP 01 \u2022 HIGH-PRESSURE COMPRESSION (200\u2013250 BAR)';
+      else if (t < T.s4[0]) stageLabel.textContent = 'STEP 02 \u2022 CHEMICAL COMPOSITION (85\u201395% CH4)';
+      else if (t < T.s5[0]) stageLabel.textContent = 'STEP 03 \u2022 PHYSICAL & COMBUSTION PROPERTIES';
+      else if (t < T.s6[0]) stageLabel.textContent = 'STEP 04 \u2022 EMISSIONS & BUOYANCY ADVANTAGE';
+      else if (t < T.s7[0]) stageLabel.textContent = 'STEP 05 \u2022 SAFETY & FLAMMABILITY LIMITS';
+      else stageLabel.textContent = 'STEP 06 \u2022 REAL-WORLD APPLICATIONS & BIO-CNG';
+
+      ctx.save();
+      for (const m of motes) {
+        const px = ((m.x + m.vx * t) % 1920 + 1920) % 1920;
+        const py = ((m.y + m.vy * t) % 1080 + 1080) % 1080;
+        const a = 0.16 + 0.14 * Math.sin(t * 2.1 + m.phase);
+        ctx.fillStyle = `rgba(103, 243, 255, ${a.toFixed(3)})`;
+        ctx.beginPath();
+        ctx.arc(px, py, m.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+
+      if (t >= T.s1[0] && t < T.s2[0] + 0.3) {
+        const lt = t - T.s1[0];
+        ctx.save();
+        for (let i = 0; i < 18; i++) {
+          const p = ((lt * 0.45 + i / 18) % 1);
+          const px = 1020 + p * 740;
+          const py = 392 + Math.sin(p * 14 + i) * (px > 1290 && px < 1590 ? 44 : 4);
+          ctx.fillStyle = px > 1600 ? 'rgba(52, 211, 153, 0.88)' : 'rgba(103, 243, 255, 0.88)';
+          ctx.beginPath();
+          ctx.arc(px, py, 3.8, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+      }
+
+      if (t >= T.s2[0] - 0.2 && t < T.s3[0] + 0.2) {
+        const lt = Math.max(0, t - T.s2[0]);
+        ctx.save();
+        for (let i = 0; i < 24; i++) {
+          const p = (lt * 0.55 + i / 24) % 1;
+          const px = 1060 + p * 780;
+          const py = 540 + Math.sin(p * 8 + i) * 28;
+          const g = ctx.createRadialGradient(px, py, 0, px, py, 12);
+          g.addColorStop(0, 'rgba(200, 254, 255, 0.95)');
+          g.addColorStop(0.5, 'rgba(0, 229, 255, 0.45)');
+          g.addColorStop(1, 'transparent');
+          ctx.fillStyle = g;
+          ctx.beginPath();
+          ctx.arc(px, py, 12, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+      }
+
+      if (t >= T.s3[0] - 0.2 && t < T.s4[0] + 0.2) {
+        const lt = Math.max(0, t - T.s3[0]);
+        const fade = Math.min(1, lt / 0.6) * Math.min(1, Math.max(0, (T.s3[1] - t) / 0.4));
+        const sorted = molecules.map(m => {
+          const x = m.bx + Math.sin(lt * m.fx + m.ph) * 54;
+          const y = m.by + Math.cos(lt * m.fy + m.ph) * 42;
+          const z = m.bz + Math.sin(lt * 0.8 + m.ph) * 50;
+          return { ...m, x, y, z };
+        }).sort((a, b) => a.z - b.z);
+
+        for (const m of sorted) {
+          const rad = (13 + (m.z + 170) * 0.03) * m.scale;
+          drawMolecule3D(m.x, m.y, rad, m.rx + lt * m.vrx, m.ry + lt * m.vry, m.kind, fade * 0.94);
+        }
+      }
+
+      if (t >= T.s4[0] - 0.2 && t < T.s5[0] + 0.2) {
+        const lt = Math.max(0, t - T.s4[0]);
+        const macroStart = T.s4[1] - 4.4;
+
+        if (t < macroStart + 0.6) {
+          ctx.save();
+          for (let i = 0; i < 36; i++) {
+            const p = (lt * 0.7 + i / 36) % 1;
+            const px = 1110 + p * 640;
+            const py = 640 + Math.sin(p * 18 + i * 0.9) * 62;
+            ctx.fillStyle = 'rgba(103, 243, 255, 0.78)';
+            ctx.beginPath();
+            ctx.arc(px, py, 3 + (i % 3), 0, Math.PI * 2);
+            ctx.fill();
+          }
+          ctx.restore();
+        }
+
+        if (t >= macroStart) {
+          const mt = t - macroStart;
+          const mAlpha = Math.min(1, mt / 0.55) * Math.min(1, Math.max(0, (T.s4[1] - t) / 0.35));
+          ctx.save();
+          ctx.globalAlpha = mAlpha;
+          for (let r = 0; r < 3; r++) {
+            const rad = 110 + ((mt * 140 + r * 140) % 420);
+            ctx.strokeStyle = `rgba(0, 229, 255, ${(1 - rad / 540) * 0.45})`;
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(960, 480, rad, 0, Math.PI * 2);
+            ctx.stroke();
+          }
+          ctx.restore();
+
+          for (let i = 0; i < 9; i++) {
+            const ang = (i / 9) * Math.PI * 2 + mt * 0.35;
+            const dist = 210 + (i % 3) * 135;
+            const mx = 960 + Math.cos(ang) * dist;
+            const my = 480 + Math.sin(ang) * dist * 0.68;
+            drawMolecule3D(mx, my, 28 + (i % 2) * 10, mt * 1.1 + i, mt * 0.9 - i, 'CH4', mAlpha);
+          }
+        }
+      }
+
+      if (t >= T.s5[0] && t < T.s6[0] + 0.2) {
+        const lt = t - T.s5[0];
+        ctx.save();
+        for (let i = 0; i < 10; i++) {
+          const p = (lt * 0.42 + i / 10) % 1;
+          const px = 1355 + ((i * 61) % 240) + Math.sin(lt * 2 + i) * 8;
+          const py = 695 - p * 430;
+          const a = Math.sin(p * Math.PI) * 0.42;
+          drawMolecule3D(px, py, 6.5, lt + i, lt * 1.3, 'CH4', a);
+        }
+        ctx.restore();
+      }
+
+      if (t >= T.s6[0] && t < T.s7[0] + 0.2) {
+        const burstAt = T.s6[0] + (T.s6[1] - T.s6[0]) * 0.48;
+        const glowAmt = Math.min(1, Math.max(0, (t - (burstAt - 2.0)) / 2.0));
+        if (glowAmt > 0) {
+          ctx.save();
+          const tg = ctx.createRadialGradient(1425, 650, 10, 1425, 650, 340);
+          tg.addColorStop(0, `rgba(255, 110, 35, ${(glowAmt * 0.42).toFixed(3)})`);
+          tg.addColorStop(1, 'transparent');
+          ctx.fillStyle = tg;
+          ctx.fillRect(900, 260, 980, 760);
+          ctx.restore();
+        }
+
+        if (t >= burstAt) {
+          const bt = t - burstAt;
+          ctx.save();
+          for (const pt of plume) {
+            const life = (bt * 0.72 + pt.phase * 0.55) % 1.45;
+            if (bt > 5.5 && life < 0.2) continue;
+            const prog = Math.min(1, life / 1.45);
+            const px = 1435 + pt.spread * prog + Math.sin(life * 8 + pt.seed * 6) * 20;
+            const py = 360 - prog * pt.speed;
+            const a = (1 - prog) * 0.65;
+            const rad = pt.size * (0.5 + prog * 1.8);
+            const pg = ctx.createRadialGradient(px, py, 0, px, py, rad);
+            pg.addColorStop(0, `rgba(235, 252, 255, ${a})`);
+            pg.addColorStop(0.5, `rgba(103, 243, 255, ${a * 0.5})`);
+            pg.addColorStop(1, 'transparent');
+            ctx.fillStyle = pg;
+            ctx.beginPath();
+            ctx.arc(px, py, rad, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          ctx.restore();
+        }
+      }
+    }
+
+    const masterTl = gsap.timeline({ paused: true });
+    const sim = { t: 0 };
+
+    masterTl.to(sim, {
+      t: TOTAL_DURATION,
+      duration: TOTAL_DURATION,
+      ease: 'none',
+      onUpdate: () => renderDynamicCanvas(sim.t),
+    }, 0);
+
+    function addKenBurns(bgId, startT, dur) {
+      // Presenter scale locked at 1.0 (no zooming, no creeping head increase)
+      masterTl.set(bgId, { scale: 1.0, x: 0, y: 0 }, startT);
+    }
+
+    // --- SCENE 1 (0.00s -> 16.89s) ---
+    masterTl.set('#scene-1', { opacity: 1 }, 0);
+    addKenBurns('#bg-1', 0, 16.89);
+    masterTl
+      .fromTo('#s1-lt', { opacity: 0, x: -40 }, { opacity: 1, x: 0, duration: 0.7, ease: 'power3.out' }, 0.6)
+      .fromTo('#s1-hud', { opacity: 0, x: 45, scale: 0.96 }, { opacity: 1, x: 0, scale: 1, duration: 0.8, ease: 'power3.out' }, 1.1)
+      .fromTo('#s1-scan', { y: 0, opacity: 0.9 }, { y: 760, opacity: 0, duration: 1.5, ease: 'power1.inOut' }, 1.5)
+      .fromTo('#p-comp', { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.5, ease: 'back.out(1.4)' }, 7.6)
+      .to('#p-comp', { borderColor: '#9bfaff', backgroundColor: 'rgba(12, 68, 92, 0.75)', boxShadow: '0 0 24px rgba(0, 229, 255, 0.38)', duration: 0.35 }, 8.2)
+      .fromTo('#p-prop', { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.5, ease: 'back.out(1.4)' }, 9.4)
+      .to('#p-prop', { borderColor: '#9bfaff', backgroundColor: 'rgba(12, 68, 92, 0.75)', boxShadow: '0 0 24px rgba(0, 229, 255, 0.38)', duration: 0.35 }, 9.8)
+      .fromTo('#p-app', { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.5, ease: 'back.out(1.4)' }, 11.2)
+      .to('#p-app', { borderColor: '#9bfaff', backgroundColor: 'rgba(12, 68, 92, 0.75)', boxShadow: '0 0 24px rgba(0, 229, 255, 0.38)', duration: 0.35 }, 11.6)
+      .to('#scene-1', { opacity: 0, duration: 0.45, ease: 'power2.inOut' }, 16.44);
+
+    // --- SCENE 2 (16.89s -> 32.29s) ---
+    masterTl.set('#scene-2', { opacity: 0 }, 16.44)
+      .to('#scene-2', { opacity: 1, duration: 0.45, ease: 'power2.inOut' }, 16.44);
+    addKenBurns('#bg-2', 16.89, 15.40);
+    masterTl
+      .fromTo('#s2-float-title', { opacity: 0, y: 30, scale: 0.94 }, { opacity: 1, y: 0, scale: 1, duration: 0.85, ease: 'power3.out' }, 18.0)
+      .fromTo('#s2-compress-hud', { opacity: 0, y: 36 }, { opacity: 1, y: 0, duration: 0.75, ease: 'power3.out' }, 22.8)
+      .to('#scene-2', { opacity: 0, duration: 0.45, ease: 'power2.inOut' }, 31.84);
+
+    // --- SCENE 3 (32.29s -> 49.28s) ---
+    masterTl.set('#scene-3', { opacity: 0 }, 31.84)
+      .to('#scene-3', { opacity: 1, duration: 0.45, ease: 'power2.inOut' }, 31.84);
+    addKenBurns('#bg-3', 32.29, 16.99);
+    masterTl
+      .fromTo('#s3-hud', { opacity: 0, y: 35 }, { opacity: 1, y: 0, duration: 0.75, ease: 'power3.out' }, 34.0)
+      .fromTo('#s3-scan', { y: 0, opacity: 0.9 }, { y: 340, opacity: 0, duration: 1.4, ease: 'power1.inOut' }, 34.4)
+      .to('#bar-ch4', { scaleX: 1, duration: 1.2, ease: 'power3.out' }, 35.8)
+      .to('#bar-c2h6', { scaleX: 1, duration: 0.9, ease: 'power3.out' }, 41.2)
+      .to('#bar-c3h8', { scaleX: 1, duration: 0.8, ease: 'power3.out' }, 42.4)
+      .to('#bar-inert', { scaleX: 1, duration: 0.8, ease: 'power3.out' }, 43.6)
+      .to('#scene-3', { opacity: 0, duration: 0.45, ease: 'power2.inOut' }, 48.83);
+
+    // --- SCENE 4 (49.28s -> 65.91s) ---
+    masterTl.set('#scene-4', { opacity: 0 }, 48.83)
+      .to('#scene-4', { opacity: 1, duration: 0.45, ease: 'power2.inOut' }, 48.83);
+    addKenBurns('#bg-4', 49.28, 16.63);
+    masterTl
+      .fromTo('#s4-hud', { opacity: 0, x: 40 }, { opacity: 1, x: 0, duration: 0.75, ease: 'power3.out' }, 50.2)
+      .fromTo('#s4-scan', { y: 0, opacity: 0.9 }, { y: 360, opacity: 0, duration: 1.4, ease: 'power1.inOut' }, 50.6)
+      .fromTo('#prop-1', { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.45 }, 50.9)
+      .fromTo('#prop-2', { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.45 }, 53.6)
+      .fromTo('#prop-3', { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.45 }, 57.5)
+      .fromTo('#prop-4', { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.45 }, 59.5)
+      .to('#s4-hud', { opacity: 0, y: -25, duration: 0.4 }, 61.2)
+      .to('#s4-macro-overlay', { opacity: 1, duration: 0.55, ease: 'power2.inOut' }, 61.5)
+      .fromTo('#s4-macro-badge', { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.6, ease: 'power3.out' }, 62.0)
+      .to('#scene-4', { opacity: 0, duration: 0.45, ease: 'power2.inOut' }, 65.46);
+
+    // --- SCENE 5 (65.91s -> 82.13s) ---
+    masterTl.set('#scene-5', { opacity: 0 }, 65.46)
+      .to('#scene-5', { opacity: 1, duration: 0.45, ease: 'power2.inOut' }, 65.46)
+      .set('#scene-5', { scale: 1.0, x: 0, y: 0 }, 65.46)
+      .fromTo('#s5-kiosk-left', { opacity: 0, scale: 0.96 }, { opacity: 1, scale: 1, duration: 0.65, ease: 'power3.out' }, 66.8)
+      .to('#k-bar-co', { scaleX: 1, duration: 1.0, ease: 'power3.out' }, 68.4)
+      .to('#k-bar-pm', { scaleX: 1, duration: 1.0, ease: 'power3.out' }, 69.2)
+      .to('#k-bar-co2', { scaleX: 1, duration: 1.0, ease: 'power3.out' }, 70.0)
+      .fromTo('#s5-kiosk-right', { opacity: 0, scale: 0.96 }, { opacity: 1, scale: 1, duration: 0.65, ease: 'power3.out' }, 73.4)
+      .to('#scene-5', { opacity: 0, duration: 0.45, ease: 'power2.inOut' }, 81.68);
+
+    // --- SCENE 6 (82.13s -> 99.45s) ---
+    masterTl.set('#scene-6', { opacity: 0 }, 81.68)
+      .to('#scene-6', { opacity: 1, duration: 0.45, ease: 'power2.inOut' }, 81.68);
+    addKenBurns('#bg-6', 82.13, 17.32);
+    masterTl
+      .fromTo('#s6-hud', { opacity: 0, y: -25 }, { opacity: 1, y: 0, duration: 0.75, ease: 'power3.out' }, 83.0)
+      .fromTo('#s6-alert-banner', { opacity: 0, y: 30, scale: 0.96 }, { opacity: 1, y: 0, scale: 1, duration: 0.55, ease: 'back.out(1.4)' }, 90.4)
+      .to('#scene-6', { opacity: 0, duration: 0.45, ease: 'power2.inOut' }, 99.00);
+
+    // --- SCENE 7 (99.45s -> 117.11s) ---
+    masterTl.set('#scene-7', { opacity: 0 }, 99.00)
+      .to('#scene-7', { opacity: 1, duration: 0.45, ease: 'power2.inOut' }, 99.00);
+    addKenBurns('#bg-7', 99.45, 17.66);
+    masterTl
+      .fromTo('#s7-hud', { opacity: 0, x: 40 }, { opacity: 1, x: 0, duration: 0.75, ease: 'power3.out' }, 100.1)
+      .fromTo('#s7-scan', { y: 0, opacity: 0.9 }, { y: 480, opacity: 0, duration: 1.4, ease: 'power1.inOut' }, 100.5)
+      .fromTo('#app-1', { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.45 }, 100.9)
+      .to('#app-1', { borderColor: '#9bfaff', backgroundColor: 'rgba(10, 62, 86, 0.84)', boxShadow: '0 0 26px rgba(0, 229, 255, 0.35)', duration: 0.35 }, 101.2)
+      .fromTo('#app-2', { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.45 }, 105.2)
+      .to('#app-2', { borderColor: '#9bfaff', backgroundColor: 'rgba(10, 62, 86, 0.84)', boxShadow: '0 0 26px rgba(0, 229, 255, 0.35)', duration: 0.35 }, 105.6)
+      .fromTo('#app-3', { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.45 }, 108.4)
+      .to('#app-3', { borderColor: '#9bfaff', backgroundColor: 'rgba(10, 62, 86, 0.84)', boxShadow: '0 0 26px rgba(0, 229, 255, 0.35)', duration: 0.35 }, 108.8)
+      .fromTo('#app-4', { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.45 }, 111.5)
+      .to('#app-4', { borderColor: '#6ee7b7', backgroundColor: 'rgba(10, 62, 86, 0.84)', boxShadow: '0 0 26px rgba(52, 211, 153, 0.35)', duration: 0.35 }, 111.9)
+      .fromTo('#s7-lt', { opacity: 0, x: -30 }, { opacity: 1, x: 0, duration: 0.65, ease: 'power3.out' }, 113.0);
+
+    window.__timelines = window.__timelines || {};
+    window.__timelines['cng-explainer-1080p'] = masterTl;
+
+    window.addEventListener('DOMContentLoaded', () => {
+      renderDynamicCanvas(0);
+    });
+  </script>
+</body>
+</html>

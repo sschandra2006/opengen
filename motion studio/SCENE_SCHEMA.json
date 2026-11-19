@@ -1,0 +1,392 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://opengen.dev/schemas/motion-graphics-project.json",
+  "title": "OpenGen Motion Graphics Project Intermediate Representation (IR)",
+  "description": "Engine-agnostic declarative intermediate representation for programmatic animated video generation.",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "projectId",
+    "title",
+    "settings",
+    "scenes"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "enum": ["1.0.0", "1.1.0"],
+      "description": "Semantic version of the OpenGen IR schema."
+    },
+    "projectId": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9_-]+$",
+      "description": "Unique identifier for the project."
+    },
+    "title": {
+      "type": "string",
+      "description": "Human-readable title of the project."
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "author": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "templateId": { "type": "string" },
+        "tags": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "description": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "settings": {
+      "type": "object",
+      "required": ["width", "height", "fps", "duration"],
+      "properties": {
+        "width": {
+          "type": "integer",
+          "enum": [720, 1080, 1280, 1440, 1920, 2160, 2560, 3840],
+          "default": 1080
+        },
+        "height": {
+          "type": "integer",
+          "enum": [720, 1080, 1280, 1350, 1440, 1920, 2160, 2560, 3840],
+          "default": 1920
+        },
+        "fps": {
+          "type": "integer",
+          "enum": [24, 25, 30, 50, 60],
+          "default": 30
+        },
+        "aspectRatio": {
+          "type": "string",
+          "enum": ["16:9", "9:16", "1:1", "4:5"],
+          "default": "9:16"
+        },
+        "duration": {
+          "type": "number",
+          "minimum": 0.1,
+          "description": "Total project duration in seconds."
+        },
+        "backgroundColor": {
+          "type": "string",
+          "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{8})$|^rgba?\\([0-9,\\s.%]+\\)$",
+          "default": "#000000"
+        },
+        "audio": {
+          "type": "object",
+          "properties": {
+            "sampleRate": { "type": "integer", "enum": [44100, 48000], "default": 48000 },
+            "channels": { "type": "integer", "enum": [1, 2], "default": 2 },
+            "masterVolume": { "type": "number", "minimum": 0, "maximum": 2, "default": 1.0 },
+            "targetLUFS": { "type": "number", "default": -14.0 },
+            "truePeak": { "type": "number", "default": -1.5 }
+          }
+        }
+      }
+    },
+    "variables": {
+      "type": "object",
+      "description": "Dynamic placeholders for template asset/color/text substitution.",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["type", "default"],
+        "properties": {
+          "type": { "type": "string", "enum": ["string", "color", "number", "image", "audio", "font"] },
+          "label": { "type": "string" },
+          "description": { "type": "string" },
+          "default": {}
+        }
+      }
+    },
+    "globalAudio": {
+      "type": "array",
+      "description": "Project-spanning audio tracks like background music or ambient tracks.",
+      "items": { "$ref": "#/$defs/audioTrack" }
+    },
+    "scenes": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/scene" }
+    }
+  },
+  "$defs": {
+    "scene": {
+      "type": "object",
+      "required": ["id", "start", "duration", "layers"],
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "start": { "type": "number", "minimum": 0 },
+        "duration": { "type": "number", "minimum": 0.1 },
+        "backgroundColor": { "type": "string" },
+        "preferredEngine": {
+          "type": "string",
+          "enum": ["hyperframes", "threejs", "motion-canvas", "remotion", "auto"],
+          "default": "auto"
+        },
+        "transitionIn": { "$ref": "#/$defs/transition" },
+        "transitionOut": { "$ref": "#/$defs/transition" },
+        "camera": {
+          "type": "object",
+          "properties": {
+            "fov": { "type": "number", "default": 45 },
+            "position": {
+              "type": "array",
+              "items": { "type": "number" },
+              "minItems": 3,
+              "maxItems": 3,
+              "default": [0, 0, 5]
+            },
+            "lookAt": {
+              "type": "array",
+              "items": { "type": "number" },
+              "minItems": 3,
+              "maxItems": 3,
+              "default": [0, 0, 0]
+            },
+            "animations": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/animation" }
+            }
+          }
+        },
+        "layers": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/layer" }
+        },
+        "audioTracks": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/audioTrack" }
+        },
+        "creativeAdDirectives": {
+          "type": "object",
+          "properties": {
+            "funnelPhase": {
+              "type": "string",
+              "enum": ["hook", "agitation", "solution_climax", "feature_blitz", "cta"]
+            },
+            "punchIn": {
+              "type": "object",
+              "properties": {
+                "enabled": { "type": "boolean", "default": false },
+                "scale": { "type": "number", "default": 1.25 },
+                "focalTarget": { "type": "string", "default": "face_eyes" },
+                "triggerTimeSec": { "type": "number" }
+              }
+            },
+            "speedRamp": {
+              "type": "object",
+              "properties": {
+                "leadInMultiplier": { "type": "number", "default": 1.8 },
+                "climaxMultiplier": { "type": "number", "default": 0.65 },
+                "revealTimeSec": { "type": "number" }
+              }
+            },
+            "audioPunctuation": {
+              "type": "object",
+              "properties": {
+                "jCutLeadSec": { "type": "number", "default": 0.25 },
+                "foleyCue": { "type": "string" }
+              }
+            },
+            "safeZoneEnforcement": {
+              "type": "object",
+              "properties": {
+                "avoidTikTokRightSidebar": { "type": "boolean", "default": true },
+                "bottomMarginPx": { "type": "integer", "default": 240 }
+              }
+            }
+          }
+        }
+      }
+    },
+    "layer": {
+      "type": "object",
+      "required": ["id", "type", "start", "duration"],
+      "properties": {
+        "id": { "type": "string" },
+        "type": {
+          "type": "string",
+          "enum": ["text", "image", "video", "shape", "svg", "chart", "lottie", "particles", "group"]
+        },
+        "name": { "type": "string" },
+        "start": { "type": "number", "minimum": 0 },
+        "duration": { "type": "number", "minimum": 0.01 },
+        "zIndex": { "type": "integer", "default": 0 },
+        "transform": {
+          "type": "object",
+          "properties": {
+            "x": { "type": "number", "default": 0 },
+            "y": { "type": "number", "default": 0 },
+            "z": { "type": "number", "default": 0 },
+            "scaleX": { "type": "number", "default": 1.0 },
+            "scaleY": { "type": "number", "default": 1.0 },
+            "rotation": { "type": "number", "default": 0 },
+            "rotationX": { "type": "number", "default": 0 },
+            "rotationY": { "type": "number", "default": 0 },
+            "opacity": { "type": "number", "minimum": 0, "maximum": 1, "default": 1.0 },
+            "anchorX": { "type": "number", "default": 0.5 },
+            "anchorY": { "type": "number", "default": 0.5 }
+          }
+        },
+        "blendMode": {
+          "type": "string",
+          "enum": ["normal", "multiply", "screen", "overlay", "darken", "lighten", "color-dodge", "color-burn"],
+          "default": "normal"
+        },
+        "mask": {
+          "type": "object",
+          "properties": {
+            "type": { "type": "string", "enum": ["alpha", "inverted-alpha", "luminance", "shape"] },
+            "sourceLayerId": { "type": "string" },
+            "shape": { "type": "string", "enum": ["rect", "circle", "path"] },
+            "path": { "type": "string" }
+          }
+        },
+        "animations": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/animation" }
+        },
+        "content": {
+          "type": "object",
+          "description": "Type-specific payload.",
+          "properties": {
+            "text": { "type": "string" },
+            "fontFamily": { "type": "string", "default": "Inter" },
+            "fontSize": { "type": "number", "default": 48 },
+            "fontWeight": { "type": ["string", "number"], "default": 700 },
+            "color": { "type": "string", "default": "#FFFFFF" },
+            "textAlign": { "type": "string", "enum": ["left", "center", "right"], "default": "center" },
+            "letterSpacing": { "type": "number", "default": 0 },
+            "lineHeight": { "type": "number", "default": 1.2 },
+            "kineticMode": {
+              "type": "string",
+              "enum": ["none", "word-by-word", "char-by-char", "typewriter", "line-by-line"],
+              "default": "none"
+            },
+            "kineticStagger": { "type": "number", "default": 0.05 },
+            "src": { "type": "string" },
+            "fit": { "type": "string", "enum": ["cover", "contain", "fill", "none"], "default": "cover" },
+            "shapeType": { "type": "string", "enum": ["rect", "circle", "ellipse", "polygon", "star", "line"] },
+            "fill": { "type": "string", "default": "#FFFFFF" },
+            "stroke": { "type": "string" },
+            "strokeWidth": { "type": "number", "default": 0 },
+            "cornerRadius": { "type": "number", "default": 0 },
+            "chartType": { "type": "string", "enum": ["bar", "line", "pie", "donut", "counter"] },
+            "chartData": {
+              "type": "object",
+              "properties": {
+                "labels": { "type": "array", "items": { "type": "string" } },
+                "datasets": { "type": "array" },
+                "targetValue": { "type": "number" },
+                "prefix": { "type": "string" },
+                "suffix": { "type": "string" }
+              }
+            },
+            "particleConfig": {
+              "type": "object",
+              "properties": {
+                "count": { "type": "integer", "default": 500 },
+                "color": { "type": "string", "default": "#4A90E2" },
+                "speed": { "type": "number", "default": 1.0 },
+                "size": { "type": "number", "default": 3.0 },
+                "spread": { "type": "number", "default": 10.0 }
+              }
+            }
+          }
+        }
+      }
+    },
+    "animation": {
+      "type": "object",
+      "required": ["property", "start", "duration", "from", "to"],
+      "properties": {
+        "property": {
+          "type": "string",
+          "description": "Animatable property (x, y, z, scaleX, scaleY, scale, rotation, opacity, fill, color, strokeDashoffset, etc.)"
+        },
+        "start": { "type": "number", "minimum": 0 },
+        "duration": { "type": "number", "minimum": 0.001 },
+        "from": {},
+        "to": {},
+        "easing": {
+          "type": "string",
+          "enum": [
+            "linear",
+            "easeInQuad", "easeOutQuad", "easeInOutQuad",
+            "easeInCubic", "easeOutCubic", "easeInOutCubic",
+            "easeInQuart", "easeOutQuart", "easeInOutQuart",
+            "easeInExpo", "easeOutExpo", "easeInOutExpo",
+            "easeInBack", "easeOutBack", "easeInOutBack",
+            "easeInElastic", "easeOutElastic", "easeInOutElastic",
+            "easeInBounce", "easeOutBounce", "easeInOutBounce",
+            "spring(mass, stiffness, damping, velocity)"
+          ],
+          "default": "easeOutCubic"
+        },
+        "stagger": { "type": "number", "default": 0 }
+      }
+    },
+    "transition": {
+      "type": "object",
+      "required": ["type", "duration"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "fade", "crossfade", "slide-left", "slide-right", "slide-up", "slide-down",
+            "wipe-left", "wipe-right", "wipe-up", "wipe-down",
+            "zoom-in", "zoom-out", "glitch", "blur", "pixelize",
+            "morph", "circle-open", "directional-wipe"
+          ]
+        },
+        "duration": { "type": "number", "minimum": 0.05, "maximum": 5.0, "default": 0.5 },
+        "easing": { "type": "string", "default": "easeInOutCubic" },
+        "params": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      }
+    },
+    "audioTrack": {
+      "type": "object",
+      "required": ["id", "src", "start"],
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "type": { "type": "string", "enum": ["voiceover", "music", "sfx", "ambient"] },
+        "src": { "type": "string" },
+        "start": { "type": "number", "minimum": 0 },
+        "duration": { "type": "number", "minimum": 0.01 },
+        "offset": { "type": "number", "default": 0 },
+        "volume": { "type": "number", "minimum": 0, "maximum": 2, "default": 1.0 },
+        "fadeIn": { "type": "number", "default": 0 },
+        "fadeOut": { "type": "number", "default": 0 },
+        "loop": { "type": "boolean", "default": false },
+        "ducking": {
+          "type": "object",
+          "properties": {
+            "duckAgainst": { "type": "string", "enum": ["voiceover", "sfx"] },
+            "duckVolume": { "type": "number", "default": 0.2 },
+            "fadeDuration": { "type": "number", "default": 0.3 }
+          }
+        },
+        "markers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["time", "name"],
+            "properties": {
+              "time": { "type": "number" },
+              "name": { "type": "string" },
+              "type": { "type": "string", "enum": ["beat", "downbeat", "word", "onset", "custom"] }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,336 @@
+# raea's one Cargo workspace: every crate below builds against one Cargo.lock into one target/ (`cargo build
+# --workspace --release`). Excluded: the sandbox's tools (wasm builds with their own size profile). Patches and profiles live here because cargo reads them only at the root.
+[workspace]
+resolver = "2"
+members = [
+    "core/animate",
+    "core/brief",
+    "core/ease",
+    "core/fonts",
+    "core/program",
+    "core/scene",
+    "core/shape",
+    "core/meshcheck",
+    "core/sdf",
+    "core/grow",
+    "core/solidinfo",
+    "core/review",
+    "core/place",
+    "core/wire",
+    "io/net",
+    "io/net/calls",
+    "io/os",
+    "systems/animate",
+    "systems/framepass",
+    "systems/compute",
+    "systems/phase",
+    "systems/shader/wgsl",
+    "systems/sampler",
+    "systems/parity",
+    "systems/shader",
+    "systems/three-shader",
+    "engine/bevy-calls",
+    "engine/bevy-adapters",
+    "engine/bevy-plugins",
+    "runtime/js",
+    "runtime/jsengine",
+    "engine/bevy-world",
+    "engine/bundle",
+    "engine/cli",
+    "engine/neural",
+    "engine/modules",
+    "engine/native",
+    "io/npm",
+    "engine/page",
+    "engine/page/host",
+    "engine/rune",
+    "engine/rune/page",
+    "engine/rune/media",
+    "engine/rune/look",
+    "engine/rune/style",
+    "engine/rune/bevy",
+    "engine/rune/js",
+    "engine/rune/layer",
+    "engine/rune/slots",
+    "engine/page/stage",
+    "engine/page/window",
+    "io/trace",
+    "io/codec",
+    "io/media",
+    "io/assets",
+    "io/gen",
+    "io/gen-comfy",
+    "io/gen-core",
+    "io/home",
+    "io/soft",
+    "io/av1",
+    "io/ffmpeg",
+    "io/apple",
+    "io/apple-coding",
+    "io/shell",
+    "gpu/device",
+    "core/k",
+    "core/calls",
+    "systems/k",
+    "systems/tone",
+    "systems/mix",
+    "systems/ml",
+    "systems/speech",
+    "systems/layout",
+    "systems/vision",
+    "systems/song",
+    "systems/perceive",
+    "systems/footage",
+    "systems/a11y",
+    "systems/bake",
+    "systems/contact",
+    "systems/light-meter",
+    "systems/canvas",
+    "systems/tweak",
+    "systems/filters",
+    "systems/wear",
+    "systems/procmat",
+    "systems/page",
+    "systems/page-net",
+    "systems/page-ops",
+    "systems/frame",
+    "systems/layers",
+    "systems/splat",
+    "systems/sprite",
+    "systems/rt",
+    "systems/text3d",
+    "runtime/gpuframe",
+    "runtime/scene3d",
+    "systems/screen",
+    "systems/matchmove",
+    "systems/grid",
+    "systems/meshseq",
+    "systems/environment",
+    "systems/look",
+    "systems/compose",
+    "systems/material",
+    "systems/mesh",
+    "systems/post",
+    "systems/fog",
+    "systems/fog-half",
+    "systems/volume",
+    "systems/grass",
+    "systems/fonts",
+    "systems/image",
+    "runtime/twins",
+    "runtime/dom",
+    "runtime/dom/media",
+    "runtime/edit",
+    "runtime/view",
+    "runtime/encode",
+    "runtime/plugins",
+    "runtime/input",
+    "tools/perceive",
+    "engine/render",
+    "engine/render/raytrace",
+    "engine/seedling",
+    "engine/web",
+    "runtime/react",
+    "bench/bridge",
+    "bench/bevy-parity",
+    "bench/bridge/swatch",
+    "core/alloc",
+    "runtime/bake",
+    "runtime/bundle",
+    "runtime/bundle/lib",
+    "engine/shape-web",
+    "runtime/calls",
+    "runtime/export",
+    "runtime/live",
+    "runtime/page",
+    "runtime/sound",
+    "runtime/look",
+    "runtime/scene",
+    "runtime/scene2d",
+    "runtime/shared",
+    "apps/check",
+    "apps/workspace",
+    "apps/workspace/registry",
+    "apps/ci",
+    "apps/tools",
+    "apps/judge",
+    "apps/solid",
+    "apps/media",
+    "apps/targets",
+    "apps/game",
+    "apps/play",
+    "tools/sdk-props",
+]
+exclude = [
+    "engine/sandbox/rtools",
+    "engine/sandbox/wsx",
+]
+
+# io/npm's reqwest = { workspace = true }
+[workspace.dependencies]
+# Rune (MIT, the native target: engine/rune) by a pinned rev of `dev`, never rewritten upstream; bump on purpose, in a commit of its own
+rune = { git = "https://github.com/anomalyco/rune", rev = "7ead7d63fcf6f9dd9669385a8b90e2ae80015d7b" }
+rune-kit = { git = "https://github.com/anomalyco/rune", rev = "7ead7d63fcf6f9dd9669385a8b90e2ae80015d7b" }
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls", "stream"] }
+
+[profile.release]
+debug = "line-tables-only"
+# incremental: a one-file change in raea-render rebuilds raea in 7-22 s against 44-130 s without it (measured 10-25,
+# under load; 7-12 s against 99-108 s again 10-26), for 5-40 GB of target/release/incremental (the sweep trims it).
+# P26 frames, off vs on (content/reel/v, 161 frames, 10-26): every frame passes both ways; 150 match exactly or differ
+# only as two runs of one binary do, and 5 (looks/ink's three, cli @156, ads @249) differ in at most 5 pixels, SSIM
+# 0.99997 or higher (incremental codegen's float rounding). So frames aren't byte-identical, and incremental isn't on
+# here: a plain `cargo build --release` (what ships, a P26 re-take's binary) builds without it. The agents' builds go
+# through `lane build`, which sets CARGO_PROFILE_RELEASE_INCREMENTAL=true for cargo under ~/raea (every P26 frame clears
+# 0.98 either way); pass CARGO_INCREMENTAL=0 to a lane build to get the plain one.
+incremental = false
+
+# never incremental: the crates that aren't workspace members (registry and vendored, Bevy among them), which no agent
+# edits. The lane's env above makes them incremental too, and sccache (which `lane` puts in front of rustc) can't cache an
+# incremental crate, so a cold rebuild of the shared target compiled all of Bevy again (10-28)
+[profile.release.package."*"]
+incremental = false
+
+# `cargo build --profile profiling`: release plus line tables, so samply sees inlined frames
+[profile.profiling]
+inherits = "release"
+debug = "line-tables-only"
+
+# what ships (tools/release.sh): release with thin LTO, as the engine's own release profile had it
+[profile.dist]
+inherits = "release"
+incremental = false
+lto = "thin"
+codegen-units = 16
+
+# the exported game's player, smaller (sdk/react/docs/game-export.md): fat LTO, one codegen unit, panic=abort, no symbols
+# (73.9 MB against 127.7 stripped from release), in target/game
+#   cargo build --profile game -p raea-app-game --bin raea-game --features player
+[profile.game]
+inherits = "release"
+incremental = false
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+strip = "symbols"
+# the symbols the stripped player lacks, kept beside it as raea-game.dSYM (never shipped; export-game files it under
+# ~/Library/Caches/raea/dsym by UUID for atos against panic.txt and crash.txt)
+debug = "line-tables-only"
+# raea-web's wasm (engine/web, docs/web-export.md): what a browser downloads. opt-level s, fat LTO, one codegen unit,
+# no symbols (wasm32 has no unwinding: panics abort). Measured 11-06 on meadow-low in Chrome on the M5 Mac, brotli'd
+# after wasm-opt: z 7.2 MB but frames 6x slower than 3's (1326 ms against 219, the clouds then simulated: z gives up the
+# inlining the ECS's systems need); 3 9.0 MB; s 7.9 MB (with the Bevy features raea-render's `native` holds) at 17 ms a
+# frame, as 3, once the clouds are cards and the frame is the GPU's
+[profile.web]
+inherits = "release"
+incremental = false
+debug = false
+opt-level = "s"
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+strip = "symbols"
+
+# crates the player only runs while it loads (image, SVG and audio decoders, the MP4 demuxer, CSG), built for size;
+# frame work keeps opt-level 3 (opt-level s for the whole player cost +20-22% frame work: lightspeed R7)
+[profile.game.package.zune-jpeg]
+opt-level = "z"
+[profile.game.package.png]
+opt-level = "z"
+[profile.game.package.image-webp]
+opt-level = "z"
+[profile.game.package.usvg]
+opt-level = "z"
+[profile.game.package.symphonia-core]
+opt-level = "z"
+[profile.game.package.symphonia-format-isomp4]
+opt-level = "z"
+[profile.game.package.symphonia-codec-aac]
+opt-level = "z"
+[profile.game.package.symphonia-bundle-mp3]
+opt-level = "z"
+[profile.game.package.symphonia-bundle-flac]
+opt-level = "z"
+[profile.game.package.manifold-rust]
+opt-level = "z"
+[profile.game.package.re_mp4]
+opt-level = "z"
+[profile.game.package.muxide]
+opt-level = "z"
+[profile.game.package.fdeflate]
+opt-level = "z"
+[profile.game.package.miniz_oxide]
+opt-level = "z"
+split-debuginfo = "packed"
+
+[patch.crates-io]
+# the MP4 muxer, vendored
+muxide = { path = "vendor/muxide" }
+# bevy_seedling 0.8.0 without its cpal 0.18 paths, ported to Bevy 0.20 (changes marked "raea:")
+bevy_seedling = { path = "vendor/bevy_seedling" }
+# bevy_text 0.20.0 on parley 0.12, so one parley builds (changes marked "raea:", docs/bevy-upgrade.md)
+bevy_text = { path = "vendor/bevy_text" }
+# bevy_ui 0.20.0 on Taffy 0.15, Blitz's, so one Taffy builds (changes marked "raea:", docs/bevy-upgrade.md)
+bevy_ui = { path = "vendor/bevy_ui" }
+# bevy_solari 0.20.0 with alpha-tested and alpha-blended materials traced by their alpha, StandardMaterial's
+# uv_transform, and a panorama's sun sampled as a light rather than found by reflection rays alone (changes marked
+# "raea:", docs/raytracing.feature RT6). Back to upstream once Solari has these.
+bevy_solari = { path = "vendor/bevy_solari" }
+# bevy_ui_widgets 0.20.0 on parley 0.12, Blitz's (docs/blitz-bevy.feature B0a)
+bevy_ui_widgets = { path = "vendor/bevy_ui_widgets" }
+# blitz-paint 0.3.0-beta.4 with angled gradients in tiles laid out around the tile, many-tile gradient layers drawn
+# as one repeating brush, text-shadow, text-overflow's ellipsis, inline boxes' opacity on their text, and box-shadow's blur as a standard deviation of half
+# its radius, as Chrome's (changes
+# marked "raea:", B4b). Back to upstream once Blitz draws these.
+blitz-paint = { path = "vendor/blitz-paint" }
+# blitz-dom 0.3.0-beta.4 with an inline flex or grid box's baseline when its line is only measured, auto table columns
+# sized by their content, table rows' rects, inline images' load events and SVG text's fonts (changes marked "raea:",
+# docs/blitz-bevy.feature B4b), and Blitz main's #1244 (hit tests skip dropped nodes) and #1246 (a replaced
+# element's natural height through aspect-ratio), and custom widgets without accessibility (S6d). Back to upstream
+# once Blitz has these.
+blitz-dom = { path = "vendor/blitz-dom" }
+# parley_engine 0.12.0 with Blink's macOS ascent hack, in pixels at each size, for the faces raea-page marks (Times,
+# Helvetica, Courier; systems/fonts/src/lib.rs; changes marked "raea:", docs/blitz-bevy.feature B4b). No upstream
+# equivalent: it is Chrome's quirk, not a font's.
+parley_engine = { path = "vendor/parley_engine" }
+# parley 0.12.0 with a line that starts in its paragraph's own wrap mode, so an inline element's start padding (an
+# inline box) is no soft wrap opportunity in a `white-space: pre` or `nowrap` paragraph (changes marked "raea:",
+# docs/blitz-bevy.feature B4b). Back to upstream once parley has it.
+parley = { path = "vendor/parley" }
+# stylo 0.22.0 with line-clamp (-webkit-line-clamp, display: -webkit-box, -webkit-box-orient) and text-wrap-style
+# (with Chrome's `pretty`) for Servo too; Gecko-only upstream (changes marked "raea:", docs/blitz-bevy.feature B4b).
+# Back to upstream once Servo's stylo has them.
+stylo = { path = "vendor/stylo" }
+# anyrender 0.14.0 with a blur's own y deviation and a filter primitive's linear-light flag, for SVG filters (changes
+# marked "raea:", docs/blitz-bevy.feature B4b). Back to upstream once anyrender's filter graph has both.
+anyrender = { path = "vendor/anyrender" }
+# anyrender_svg 0.15.0 with SVG masks, filter effects (on raea-page's GPU passes) and patterns, which it drew as error
+# boxes, and a drawing clipped to its viewport (changes marked "raea:", docs/blitz-bevy.feature B4b). Back to upstream
+# once anyrender_svg draws these.
+anyrender_svg = { path = "vendor/anyrender_svg" }
+# vello_encoding 0.11.0 with its seven bump buffers' sizes set by the embedder (linebender/vello#1861's
+# BumpAllocationSizes; changes marked "raea:"): raea-page sizes them for its pages, not Vello's 165 MiB of defaults.
+# Back to upstream once #1861 lands.
+vello_encoding = { path = "vendor/vello_encoding" }
+# vello_shaders 0.11.0 with linear-light blending in the fine stage, switched by vello_encoding's set_blend_linear
+# (changes marked "raea:"): raea-page blends a bevy_ui page as Bevy does (bevy_ui on Blitz). No upstream
+# equivalent yet (linebender/vello blends the encoded values).
+vello_shaders = { path = "vendor/vello_shaders" }
+# Firewheel 0.12 on Bevy 0.20: bevy_reflect 0.20 and a glam-33 feature (BillyDM/Firewheel#144; changes marked "raea:")
+firewheel = { path = "vendor/firewheel" }
+firewheel-core = { path = "vendor/firewheel-core" }
+firewheel-graph = { path = "vendor/firewheel-graph" }
+firewheel-macros = { path = "vendor/firewheel-macros" }
+firewheel-nodes = { path = "vendor/firewheel-nodes" }
+
+[patch."https://github.com/anomalyco/rune"]
+# rune-taffy at the rev above with encode_wrap covering taffy's flexbox_balance modes, which Blitz turns on: a crate
+# with Rune and Blitz in one build (raea-rune-slots) doesn't compile without it (changes marked "raea:"). Back to
+# upstream once Rune has it.
+rune-taffy = { path = "vendor/rune-taffy" }
+
+[patch."https://github.com/djeedai/bevy_hanabi"]
+# bevy_hanabi at engine/bevy-plugins' rev with frame-pure particles: a new particle seeded by its spawn index, not the
+# slot it recycles, and blended effects drawn back to front (changes marked "raea:", raea #52). Only the plugin build
+# compiles it. Back to upstream once hanabi has a deterministic mode.
+bevy_hanabi = { path = "vendor/bevy_hanabi" }

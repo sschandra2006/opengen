@@ -1,0 +1,15 @@
+{
+  "name": "@opengen/core",
+  "version": "1.0.0",
+  "description": "Core Intermediate Representation (IR), Schema Validation, and Builders for OpenGen Motion Graphics",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "type": "module",
+  "scripts": {
+    "test": "bun test"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^22.0.0"
+  }
+}

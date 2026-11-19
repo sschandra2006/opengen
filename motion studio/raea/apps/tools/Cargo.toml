@@ -1,0 +1,18 @@
+[package]
+name = "raea-app-tools"
+version = "0.1.0"
+edition = "2024"
+license = "FSL-1.1-ALv2"
+publish = false
+description = "The `raea` verbs that run raea's model tools: sao, tokensynth, setup-audio, sounds, splat, song and gen"
+
+[dependencies]
+raea-io-assets = { path = "../../io/assets" }
+# generation flows: made.app, fal, Replicate, OpenRouter, Modal, ComfyUI (`raea gen`)
+raea-io-gen = { path = "../../io/gen" }
+raea-io-home = { path = "../../io/home" }
+raea-io-media = { path = "../../io/media", default-features = false }
+serde_json = "1"
+# the verbs' flags read as a render reads its own
+raea-runtime-bundle = { path = "../../runtime/bundle" }
+raea-runtime-export = { path = "../../runtime/export" }

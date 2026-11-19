@@ -1,0 +1,118 @@
+{
+  "id": "tech-explainer",
+  "name": "High-Tech Feature & Architecture Explainer",
+  "category": "Explainer",
+  "supportedAspectRatios": ["9:16", "16:9"],
+  "defaultDuration": 10.0,
+  "variables": {
+    "brandName": { "type": "string", "default": "QUANTUM FLOW", "label": "Brand Name" },
+    "primaryColor": { "type": "color", "default": "#38bdf8", "label": "Primary Accent Color" },
+    "headline": { "type": "string", "default": "Deterministic AI Video Generation", "label": "Main Headline" },
+    "metricValue": { "type": "number", "default": 60, "label": "Metric Target Value" },
+    "metricSuffix": { "type": "string", "default": " FPS", "label": "Metric Suffix" },
+    "ctaText": { "type": "string", "default": "Hardware NVENC Accelerated", "label": "Call To Action" }
+  },
+  "projectBlueprint": {
+    "schemaVersion": "1.0.0",
+    "projectId": "{{generated_id}}",
+    "title": "{{brandName}} Showcase",
+    "settings": {
+      "width": "{{aspect_width}}",
+      "height": "{{aspect_height}}",
+      "fps": 30,
+      "aspectRatio": "{{aspect_ratio}}",
+      "duration": 10.0,
+      "backgroundColor": "#090d16"
+    },
+    "scenes": [
+      {
+        "id": "scene_hook",
+        "name": "Hook",
+        "start": 0.0,
+        "duration": 5.0,
+        "backgroundColor": "#090d16",
+        "layers": [
+          {
+            "id": "badge",
+            "type": "text",
+            "start": 0.2,
+            "duration": 4.8,
+            "transform": { "y": -350, "opacity": 0 },
+            "content": {
+              "text": "{{brandName}}",
+              "fontSize": 32,
+              "color": "{{primaryColor}}",
+              "fontWeight": 800,
+              "letterSpacing": 6
+            },
+            "animations": [
+              { "property": "opacity", "start": 0.2, "duration": 0.4, "from": 0, "to": 1, "easing": "easeOutQuad" },
+              { "property": "y", "start": 0.2, "duration": 0.5, "from": -400, "to": -350, "easing": "easeOutBack" }
+            ]
+          },
+          {
+            "id": "headline",
+            "type": "text",
+            "start": 0.5,
+            "duration": 4.5,
+            "transform": { "y": -50, "opacity": 1 },
+            "content": {
+              "text": "{{headline}}",
+              "fontSize": 64,
+              "color": "#ffffff",
+              "fontWeight": 900,
+              "kineticMode": "word-by-word",
+              "kineticStagger": 0.09
+            }
+          }
+        ]
+      },
+      {
+        "id": "scene_solution",
+        "name": "Metrics",
+        "start": 5.0,
+        "duration": 5.0,
+        "backgroundColor": "#050811",
+        "layers": [
+          {
+            "id": "metric_counter",
+            "type": "chart",
+            "start": 5.2,
+            "duration": 4.8,
+            "transform": { "y": -60, "opacity": 1 },
+            "content": {
+              "chartType": "counter",
+              "chartData": {
+                "targetValue": "{{metricValue}}",
+                "prefix": "",
+                "suffix": "{{metricSuffix}}"
+              },
+              "fontSize": 110,
+              "fontWeight": 900,
+              "color": "#10b981"
+            },
+            "animations": [
+              { "property": "scale", "start": 5.2, "duration": 0.6, "from": 0.6, "to": 1.0, "easing": "easeOutBack" }
+            ]
+          },
+          {
+            "id": "cta",
+            "type": "text",
+            "start": 5.5,
+            "duration": 4.5,
+            "transform": { "y": 180, "opacity": 0 },
+            "content": {
+              "text": "{{ctaText}}",
+              "fontSize": 44,
+              "color": "#94a3b8",
+              "fontWeight": 700
+            },
+            "animations": [
+              { "property": "opacity", "start": 5.5, "duration": 0.4, "from": 0, "to": 1, "easing": "easeOutQuad" }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

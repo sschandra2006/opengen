@@ -1,0 +1,285 @@
+{
+  "bevy": "0.20",
+  "plugins": {
+    "avian": {
+      "crate": "avian3d",
+      "version": "v0.8.0",
+      "schema": "a44c178242965f49"
+    },
+    "hanabi": {
+      "crate": "bevy_hanabi",
+      "version": "v0.20.0-dev",
+      "schema": "8ca8ca1a43321d23"
+    },
+    "tweening": {
+      "crate": "bevy_tweening",
+      "version": "v0.16.0",
+      "schema": "29d3be85d09e76b5"
+    },
+    "lightyear": {
+      "crate": "lightyear",
+      "version": "v0.31.0",
+      "schema": "46f1cab02af97485"
+    },
+    "remote": {
+      "crate": "bevy_remote",
+      "version": "v0.20.0",
+      "builtin": true
+    },
+    "bevy": {
+      "crate": "bevy",
+      "version": "v0.20.0",
+      "schema": "7ee33d32170af3cd"
+    },
+    "leafwing": {
+      "crate": "leafwing-input-manager",
+      "version": "v0.22.0",
+      "schema": "b1d84bf98cf142b8"
+    },
+    "enhanced_input": {
+      "crate": "bevy_enhanced_input",
+      "version": "v0.27.0",
+      "schema": "0b2558f86649b7e8"
+    },
+    "tnua": {
+      "crate": "bevy-tnua",
+      "version": "v0.33.0",
+      "schema": "63c2ecc3fa58a279"
+    },
+    "avian2d": {
+      "crate": "avian2d",
+      "version": "v0.8.0",
+      "schema": "a69d4fc76e3c81bc"
+    },
+    "rapier3d": {
+      "crate": "bevy_rapier3d",
+      "version": "",
+      "schema": "f40ba23a1929c944"
+    },
+    "rapier2d": {
+      "crate": "bevy_rapier2d",
+      "version": "",
+      "schema": "d5ed8a57e02a4dfa"
+    },
+    "tilemap": {
+      "crate": "bevy_ecs_tilemap",
+      "version": "",
+      "schema": "7005a65f8e2a4165"
+    },
+    "ldtk": {
+      "crate": "bevy_ecs_ldtk",
+      "version": "",
+      "schema": "dcc07c35fddd43ae"
+    },
+    "tiled": {
+      "crate": "bevy_ecs_tiled",
+      "version": "v0.14.0",
+      "schema": "4ee941cfa7669d17"
+    },
+    "simple_tilemap": {
+      "crate": "bevy_simple_tilemap",
+      "version": "v0.21.0",
+      "schema": "29d3be85d09e76b5"
+    },
+    "common_assets": {
+      "crate": "bevy_common_assets",
+      "version": "v0.18.0",
+      "schema": "29d3be85d09e76b5"
+    },
+    "obj": {
+      "crate": "bevy_obj",
+      "version": "v0.20.0",
+      "schema": "01ac291db2fe4a32"
+    },
+    "asset_loader": {
+      "crate": "bevy_asset_loader",
+      "version": "v0.28.1",
+      "schema": "29d3be85d09e76b5"
+    },
+    "progress": {
+      "crate": "iyes_progress",
+      "version": "v0.18.0",
+      "schema": "29d3be85d09e76b5"
+    },
+    "save": {
+      "crate": "moonshine-save",
+      "version": "",
+      "schema": "29d3be85d09e76b5"
+    },
+    "vox": {
+      "crate": "bevy_vox_scene",
+      "version": "v0.23.0",
+      "schema": "8ac79b8ef75227dd"
+    },
+    "aseprite": {
+      "crate": "bevy_aseprite_ultra",
+      "version": "v0.10.0",
+      "schema": "6be38e3842a08e0b"
+    },
+    "egui": {
+      "crate": "bevy_egui",
+      "version": "v0.43.1",
+      "schema": "4fc4f54538e79930"
+    },
+    "inspector": {
+      "crate": "bevy-inspector-egui",
+      "version": "v0.38.0",
+      "schema": "29d3be85d09e76b5"
+    },
+    "debugdump": {
+      "crate": "bevy_mod_debugdump",
+      "version": "",
+      "schema": "29d3be85d09e76b5"
+    },
+    "console": {
+      "crate": "bevy_console",
+      "version": "v0.19.0",
+      "schema": "29d3be85d09e76b5"
+    },
+    "skein": {
+      "crate": "bevy_skein",
+      "version": "v0.7.0-rc.1",
+      "schema": "29d3be85d09e76b5"
+    },
+    "vector_shapes": {
+      "crate": "bevy_vector_shapes",
+      "version": "v0.14.0",
+      "schema": "913c8f6f4e33b3bd"
+    },
+    "sprite3d": {
+      "crate": "bevy_sprite3d",
+      "version": "v10.1.0",
+      "schema": "3fc254e6fcc21bde"
+    },
+    "spritesheet": {
+      "crate": "bevy_spritesheet_animation",
+      "version": "",
+      "schema": "2111f4259e81d198"
+    },
+    "light_2d": {
+      "crate": "bevy_light_2d",
+      "version": "",
+      "schema": "fdad3f08cdcef6b8"
+    },
+    "text3d": {
+      "crate": "bevy_rich_text3d",
+      "version": "",
+      "schema": "a0dcd4dfa163ab3d"
+    },
+    "smud": {
+      "crate": "bevy_smud",
+      "version": "v0.15.0",
+      "schema": "04ef8eec337d9961"
+    },
+    "enoki": {
+      "crate": "bevy_enoki",
+      "version": "",
+      "schema": "68fc2d663c783b97"
+    },
+    "big_space": {
+      "crate": "big_space",
+      "version": "v0.14.0-rc.0",
+      "schema": "ea45cee1989509e2"
+    },
+    "kira": {
+      "crate": "bevy_kira_audio",
+      "version": "v0.27.1",
+      "schema": "29d3be85d09e76b5"
+    },
+    "panorbit": {
+      "crate": "bevy_panorbit_camera",
+      "version": "v0.36.0",
+      "schema": "06c34cfc15f5ab6c"
+    },
+    "pancam": {
+      "crate": "bevy_pancam",
+      "version": "v0.22.0",
+      "schema": "336cf240ca4aee49"
+    },
+    "hui": {
+      "crate": "bevy_hui",
+      "version": "v0.8.0",
+      "schema": "03a9cc128d8f6943"
+    },
+    "flair": {
+      "crate": "bevy_flair",
+      "version": "v0.9.0",
+      "schema": "8c46f5618ed82ce7"
+    },
+    "navigator": {
+      "crate": "vleue_navigator",
+      "version": "v0.17.0",
+      "schema": "29d3be85d09e76b5"
+    },
+    "northstar": {
+      "crate": "bevy_northstar",
+      "version": "v0.8.0",
+      "schema": "29d3be85d09e76b5"
+    },
+    "tween": {
+      "crate": "bevy_tween",
+      "version": "",
+      "schema": "35dfc968f011addd"
+    },
+    "easings": {
+      "crate": "bevy_easings",
+      "version": "",
+      "schema": "5f15df68dd9ca6ff"
+    },
+    "lookup_curve": {
+      "crate": "bevy_lookup_curve",
+      "version": "v0.13.0",
+      "schema": "29d3be85d09e76b5"
+    },
+    "trauma_shake": {
+      "crate": "bevy_trauma_shake",
+      "version": "v0.9.0",
+      "schema": "5de6bbe6fe132a34"
+    },
+    "noise": {
+      "crate": "noise",
+      "version": "",
+      "schema": "29d3be85d09e76b5"
+    },
+    "proc_gen": {
+      "crate": "bevy_ghx_proc_gen",
+      "version": "v0.10.0",
+      "schema": "a1e49d29fb0ff84a"
+    },
+    "noisy": {
+      "crate": "noisy_bevy",
+      "version": "v0.15.0",
+      "schema": "29d3be85d09e76b5"
+    },
+    "rand": {
+      "crate": "bevy_rand",
+      "version": "v0.16.0",
+      "schema": "b2738cf32a18d77d"
+    },
+    "quinnet": {
+      "crate": "bevy_quinnet",
+      "version": "v0.22.0",
+      "schema": "29d3be85d09e76b5"
+    },
+    "http": {
+      "crate": "bevy_http_client",
+      "version": "v0.12.0",
+      "schema": "29d3be85d09e76b5"
+    },
+    "yoleck": {
+      "crate": "bevy-yoleck",
+      "version": "v0.34.0",
+      "schema": "803b5cf3c96f486f"
+    },
+    "trenchbroom": {
+      "crate": "bevy_trenchbroom",
+      "version": "v0.15.0",
+      "schema": "988ca8e7adeec24b"
+    },
+    "swatch": {
+      "crate": "raea-bench-swatch",
+      "version": "v0.1.0",
+      "schema": "29d3be85d09e76b5"
+    }
+  }
+}

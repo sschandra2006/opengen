@@ -3,6 +3,7 @@ __pycache__/
 *$py.class
 .pytest_cache/
 .env
+**/.env
 /.ai-document-memory/
 /cache/
 /data/
@@ -14,3 +15,39 @@ __pycache__/
 /dist/
 .coverage
 htmlcov/
+scratch/
+*.log
+
+# Dependencies & Environments
+node_modules/
+**/node_modules/
+.venv/
+**/.venv/
+venv/
+**/venv/
+env/
+**/env/
+
+# Large binaries, media files, checkpoints and weights (>20MB)
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.wav
+*.mp3
+*.pth
+*.pt
+*.ckpt
+*.onnx
+*.safetensors
+*.bin
+*.tar
+*.zip
+*.7z
+*.gz
+out/
+**/out/
+pretrained_weights/
+**/pretrained_weights/
+checkpoints/
+**/checkpoints/

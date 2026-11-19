@@ -1,0 +1,44 @@
+[package]
+name = "raea-runtime-bundle"
+version = "0.1.0"
+edition = "2024"
+license = "FSL-1.1-ALv2"
+publish = false
+description = "A composition's TSX bundled into one script the engine runs, with its entry, cache and styles"
+
+[features]
+# styles.gen.ts's Tailwind compile, run as an ES module on the engine (raea-native's js-exec)
+modules = ["raea-native/modules"]
+
+[dependencies]
+# canonical paths without Windows' verbatim prefix, for import specifiers (fresh.rs spec)
+dunce = "1"
+# raea's home (the checkout's, or an install's share/raea): the SDK packages, the bundler's library, Tailwind's package
+raea-io-home = { path = "../../io/home" }
+raea-core-scene = { path = "../../core/scene" }
+raea-native = { path = "../../engine/native", default-features = false }
+# an imported long-GOP source's optimized copy, named in the export cache's key (its probe: AVFoundation on Apple, the
+# soft backend's container reader elsewhere)
+raea-io-media = { path = "../../io/media", default-features = false, features = ["apple", "soft-audio"] }
+# RAEA_HIDE_LAYERS's page CSS (the layer pass's oracle)
+raea-sys-layers = { path = "../../systems/layers" }
+serde_json = "1"
+regex = "1"
+# raea-bundle's library (engine/bundle: Rolldown) loaded at run time (fresh.rs inproc), never a Cargo dependency:
+# Rolldown's crates turn on serde_json's preserve_order and arbitrary_precision, and features unify across a binary
+# (f60e0b7: every JSON map an IndexMap, every number its text, pong's apply 87 -> 159 allocations)
+raea-runtime-bundle-lib = { path = "lib" }
+
+# whether the render that left a work folder still runs (pid.rs), asked of the system rather than a `kill` on PATH
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
+
+# the work folder's node_modules link on Windows (fresh.rs link_node_modules), as raea-io-npm makes its links
+[target.'cfg(windows)'.dependencies]
+junction = "1"
+# and its process check (pid.rs)
+windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_System_Threading"] }
+
+[dev-dependencies]
+# tests/mezz.rs writes its long-GOP clip with the soft backend's H.264
+raea-io-media = { path = "../../io/media", default-features = false, features = ["apple", "soft"] }

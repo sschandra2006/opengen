@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "baseUrl": ".",
+    "paths": {
+      "@opengen/core": ["packages/core/src/index.ts"],
+      "@opengen/engine-hyperframes": ["packages/engine-hyperframes/src/index.ts"],
+      "@opengen/engine-pdoom": ["packages/engine-pdoom/src/index.ts"],
+      "@opengen/renderer": ["packages/renderer/src/index.ts"]
+    },
+    "strict": true,
+    "skipLibCheck": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": ["packages/**/*", "studio/**/*"]
+}

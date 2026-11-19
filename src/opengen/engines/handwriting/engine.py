@@ -14,6 +14,9 @@ from opengen.engines.handwriting.ruler import RULED_PRESETS
 from opengen.engines.handwriting.glyph_bank import GlyphVariantBank
 from opengen.engines.handwriting.drift import BrownianDriftSimulator
 from opengen.engines.handwriting.physics import PenPhysicsSimulator
+from opengen.engines.handwriting.ligature_engine import CursiveLigatureEngine
+from opengen.engines.handwriting.fatigue import MultiPageFatigueSimulator
+from opengen.engines.handwriting.imperfections import HumanImperfectionGenerator
 
 logger = logging.getLogger(__name__)
 
@@ -63,8 +66,16 @@ class HandwritingEngine:
             for i in range(0, len(lines), max_lines_per_page)
         ]
 
+        fatigue_sim = MultiPageFatigueSimulator(seed=seed)
         canvases: List[Image.Image] = []
-        for page_lines in page_chunks:
+
+        for p_idx, page_lines in enumerate(page_chunks):
+            eff_margin, eff_pitch, spacing_fac, slant_deg = fatigue_sim.get_page_fatigue_parameters(
+                page_index=p_idx,
+                base_margin_px=self.specs.left_margin_px,
+                base_line_pitch_px=self.specs.line_pitch_px
+            )
+
             if transparent_mode:
                 canvas = Image.new("RGBA", (width_px, height_px), (255, 255, 255, 0))
             else:
@@ -73,8 +84,11 @@ class HandwritingEngine:
             draw = ImageDraw.Draw(canvas)
             for l_idx, line in enumerate(page_lines):
                 drift_sim.reset_line()
-                current_x = self.specs.left_margin_px
-                baseline_y = start_y + (l_idx * self.specs.line_pitch_px)
+                current_x = eff_margin
+                baseline_y = start_y + (l_idx * eff_pitch)
+
+                prev_char = None
+                prev_exit = None
 
                 for c_idx, char in enumerate(line):
                     font = self.glyph_bank.get_font_for_char(char, c_idx, history)
@@ -85,8 +99,21 @@ class HandwritingEngine:
                         is_downstroke=(char in "dfhkltpbqj123456789"),
                         rng=run_rng,
                     )
-                    draw.text((current_x + dx, baseline_y + dy), char, font=font, fill=ink_color)
-                    char_w = draw.textlength(char, font=font)
+                    char_pos = (current_x + dx, baseline_y + dy)
+                    draw.text(char_pos, char, font=font, fill=ink_color)
+                    char_w = draw.textlength(char, font=font) * spacing_fac
+
+                    # Synthesize continuous cursive Bezier ligatures
+                    if prev_char and prev_exit:
+                        entry_pt = (current_x + dx, baseline_y + dy + 10)
+                        spline_pts = CursiveLigatureEngine.calculate_connecting_stroke(
+                            prev_char, char, prev_exit, entry_pt, slant_deg=slant_deg
+                        )
+                        if spline_pts:
+                            draw.line(spline_pts, fill=ink_color, width=1)
+
+                    prev_char = char
+                    prev_exit = (current_x + dx + char_w - 1, baseline_y + dy + 10)
                     current_x += char_w + dx
 
             canvases.append(canvas if transparent_mode else canvas.convert("RGB"))

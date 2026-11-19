@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "opengen"
-version = "1.0.0"
-description = "Modular, open-source, self-hostable AI generation framework for documents, presentations, images, and handwriting."
+version = "1.1.0"
+description = "Modular, open-source, self-hostable AI generation framework for documents, presentations, images, handwriting, and motion graphics."
 readme = "README.md"
 license = { text = "Apache-2.0" }
 authors = [{ name = "OpenGen Maintainers" }]
@@ -47,3 +47,15 @@ opengen = "opengen.cli.main:app"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/opengen"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+norecursedirs = [
+    "motion studio",
+    "scratch",
+    "out",
+    "output",
+    "cache",
+    ".ai-document-memory",
+    "node_modules"
+]

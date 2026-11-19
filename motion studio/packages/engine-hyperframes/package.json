@@ -1,0 +1,11 @@
+{
+  "name": "@opengen/engine-hyperframes",
+  "version": "1.0.0",
+  "description": "2D Animation Compiler for OpenGen IR using HTML5, CSS3, and GSAP",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "type": "module",
+  "dependencies": {
+    "@opengen/core": "workspace:*"
+  }
+}

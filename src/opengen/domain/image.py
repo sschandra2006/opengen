@@ -12,6 +12,9 @@ class ImageRequest(BaseModel):
     style: str = "realistic"    # "realistic", "vector_illustration", "digital_art", "minimal"
     transparent_background: bool = False
     provider_preference: Optional[str] = None
+    apply_optical_physics: bool = True
+    reserve_negative_space: bool = False
+    brand_id: Optional[str] = None
 
 class ImageResponse(BaseModel):
     file_path: str

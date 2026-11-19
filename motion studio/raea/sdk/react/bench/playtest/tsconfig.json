@@ -1,0 +1,5 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": { "skipLibCheck": true, "allowImportingTsExtensions": true, "types": [] },
+  "files": ["dsl.typetest.ts", "../../../raea/conformance/machine.typetest.ts", "../games/platformer/edit.playtest.ts", "./fixtures/ledge-fixed/edit.playtest.ts"]
+}

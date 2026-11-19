@@ -1,0 +1,26 @@
+[package]
+name = "raea-perceive"
+version = "0.1.0"
+edition = "2024"
+license = "FSL-1.1-ALv2"
+publish = false
+description = "raea-perceive: perception from a shell (footage, frames, sound, the models' checks against their references)"
+
+[features]
+denoise = ["raea-sys-footage/denoise", "raea-sys-song/denoise"]
+ocr-portable = ["raea-sys-perceive/ocr-portable"]
+face-portable = ["raea-sys-perceive/face-portable"]
+vision-portable = ["ocr-portable", "face-portable", "raea-sys-perceive/vision-portable"]
+
+[dependencies]
+# frames come from the media plane (VideoToolbox on Apple, ffmpeg or the software decoders elsewhere)
+# soft-audio: a song's sound decoded in process off Apple (Symphonia), where an install has no ffmpeg (#43)
+raea-io-media = { path = "../../io/media", default-features = false, features = ["apple", "soft-audio"] }
+raea-sys-layout = { path = "../../systems/layout" }
+raea-sys-vision = { path = "../../systems/vision" }
+raea-sys-song = { path = "../../systems/song" }
+raea-sys-perceive = { path = "../../systems/perceive" }
+raea-sys-footage = { path = "../../systems/footage" }
+serde_json = "1"
+image = { version = "0.25", default-features = false, features = ["png", "jpeg"] }
+

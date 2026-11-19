@@ -26,6 +26,9 @@ from opengen.domain.document import TemplateProfile, MappingReport
 from opengen.domain.image import ImageRequest
 from opengen.domain.presentation import SlideSpec
 from opengen.domain.handwriting import HandwritingProfile
+from opengen.domain.brand import BrandKitSpec
+from opengen.brand.store import brand_kit_store
+from opengen.brand.resolver import BrandKitTokenResolver
 from opengen.engines.document.engine import DocumentEngine
 from opengen.engines.document.template.profiler import TemplateProfiler
 from opengen.engines.document.reference.extractor import ReferenceExtractor
@@ -36,6 +39,7 @@ from opengen.engines.presentation.planner import PresentationPlanner
 from opengen.engines.image.engine import ImageEngine
 from opengen.engines.handwriting.engine import HandwritingEngine
 from opengen.engines.handwriting.ruler import RULED_PRESETS
+from opengen.engines.motion.engine import MotionEngine
 from opengen.providers.manager import ProviderManager
 from opengen.queue.job_store import JobStore, job_store
 from opengen.telemetry.cost_tracker import CostTracker
@@ -85,6 +89,23 @@ class ImageResult:
     height: int
     cost_usd: float = 0.0
     is_vector: bool = False
+    job_id: Optional[str] = None
+
+    def save(self, destination: Union[str, Path]) -> str:
+        dest = Path(destination)
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(self.file_path, str(dest))
+        return str(dest)
+
+
+@dataclass
+class MotionResult:
+    file_path: str
+    duration: float
+    aspect_ratio: str = "9:16"
+    cost_usd: float = 0.0
+    critic_score: int = 100
+    critic_violations: List[str] = field(default_factory=list)
     job_id: Optional[str] = None
 
     def save(self, destination: Union[str, Path]) -> str:
@@ -231,6 +252,78 @@ class DocumentsClient:
             output_path=out,
         )
 
+    def compile_typst(
+        self,
+        data: Dict[str, Any],
+        output_pdf_path: Optional[Union[str, Path]] = None,
+        brand_id: Optional[str] = None,
+    ) -> DocumentResult:
+        """Compiles a Swiss Editorial document report (<50ms) using Typst."""
+        job_id, run_dir = settings.allocate_run_dir("documents")
+        target_pdf = str(output_pdf_path) if output_pdf_path else str(run_dir / f"report_{job_id}.pdf")
+
+        brand = brand_kit_store.get_brand(brand_id) if brand_id else None
+        res_pdf = DocumentEngine.compile_typst(
+            data=data,
+            output_pdf_path=target_pdf,
+            brand=brand
+        )
+
+        artifacts = {"pdf": res_pdf}
+        self.parent._record_completed_job(
+            job_id=job_id,
+            engine="document",
+            run_dir=run_dir,
+            artifacts=artifacts,
+            telemetry={"total_cost_usd": 0.0, "compiler": "typst"},
+        )
+
+        return DocumentResult(
+            docx_path=res_pdf,
+            pdf_path=res_pdf,
+            page_count=1,
+            cost_usd=0.0,
+            job_id=job_id,
+        )
+
+    def compile_catalog_typst(
+        self,
+        products: List[Dict[str, Any]],
+        title: str = "Artisan Product Catalog & Price Guide",
+        output_pdf_path: Optional[Union[str, Path]] = None,
+        brand_id: Optional[str] = None,
+        hero_ratio: float = 0.15
+    ) -> DocumentResult:
+        """Compiles an 80/20 Swiss Editorial product catalog (Hero Bento cards + Dot-Leader menus) via Typst."""
+        job_id, run_dir = settings.allocate_run_dir("documents")
+        target_pdf = str(output_pdf_path) if output_pdf_path else str(run_dir / f"catalog_{job_id}.pdf")
+
+        brand = brand_kit_store.get_brand(brand_id) if brand_id else None
+        res_pdf = DocumentEngine.compile_catalog_typst(
+            products=products,
+            output_pdf_path=target_pdf,
+            title=title,
+            brand=brand,
+            hero_ratio=hero_ratio
+        )
+
+        artifacts = {"pdf": res_pdf}
+        self.parent._record_completed_job(
+            job_id=job_id,
+            engine="document",
+            run_dir=run_dir,
+            artifacts=artifacts,
+            telemetry={"total_cost_usd": 0.0, "compiler": "typst_catalog"},
+        )
+
+        return DocumentResult(
+            docx_path=res_pdf,
+            pdf_path=res_pdf,
+            page_count=1,
+            cost_usd=0.0,
+            job_id=job_id,
+        )
+
 
 class PresentationsClient:
     """SDK client for Engine B: Presentation Generation."""
@@ -311,6 +404,62 @@ class PresentationsClient:
             theme_name=theme_name,
         )
 
+    def generate_bento(
+        self,
+        topic: str,
+        slide_count: int = 7,
+        brand_id: Optional[str] = None,
+        output_pptx_path: Optional[Union[str, Path]] = None,
+        output_html_path: Optional[Union[str, Path]] = None,
+        source_materials: Optional[str] = None,
+    ) -> PresentationResult:
+        """Generates an elite 12-column Bento Grid deck (both native PPTX and fluid HTML5)."""
+        job_id, run_dir = settings.allocate_run_dir("presentations")
+        job_tracker = CostTracker()
+        job_provider = self.parent._make_provider_manager(job_tracker)
+        engine = PresentationEngine(planner=PresentationPlanner(provider_mgr=job_provider))
+
+        target_pptx = str(output_pptx_path) if output_pptx_path else str(run_dir / f"bento_deck_{job_id}.pptx")
+        target_html = str(output_html_path) if output_html_path else str(run_dir / f"bento_deck_{job_id}.html")
+
+        brand = brand_kit_store.get_brand(brand_id) if brand_id else None
+        deck_spec, pptx_out, html_out = engine.generate_bento_presentation(
+            topic=topic,
+            output_pptx_path=target_pptx,
+            output_html_path=target_html,
+            slide_count=slide_count,
+            brand=brand,
+            source_materials=source_materials,
+        )
+
+        slides_data = [
+            {
+                "slide_number": s.slide_number,
+                "title": s.title,
+                "layout_type": s.layout_type,
+                "narrative_stage": s.narrative_stage,
+                "bento_cards": [c.model_dump() for c in s.bento_cards],
+            }
+            for s in deck_spec.slides
+        ]
+
+        telemetry = job_tracker.get_aggregate_cost()
+        self.parent._record_completed_job(
+            job_id=job_id,
+            engine="presentation",
+            run_dir=run_dir,
+            artifacts={"pptx": pptx_out, "html": html_out},
+            telemetry=telemetry,
+        )
+
+        return PresentationResult(
+            pptx_path=pptx_out,
+            slide_count=len(deck_spec.slides),
+            slides=slides_data,
+            cost_usd=telemetry.get("total_cost_usd", 0.0),
+            job_id=job_id,
+        )
+
 
 class ImagesClient:
     """SDK client for Engine C: Image Generation."""
@@ -326,6 +475,9 @@ class ImagesClient:
         output_format: str = "png",
         provider: Optional[str] = None,
         transparent_background: bool = False,
+        apply_optical_physics: bool = True,
+        reserve_negative_space: bool = False,
+        brand_id: Optional[str] = None,
     ) -> ImageResult:
         """Generates a raster (FLUX/DALL-E) or vector SVG (Recraft) asset into an isolated run directory."""
         job_id, run_dir = settings.allocate_run_dir("images")
@@ -337,6 +489,9 @@ class ImagesClient:
             output_format=output_format,
             provider_preference=provider,
             transparent_background=transparent_background,
+            apply_optical_physics=apply_optical_physics,
+            reserve_negative_space=reserve_negative_space,
+            brand_id=brand_id,
         )
         resp = engine.generate_image(req, output_dir=run_dir)
 
@@ -356,6 +511,53 @@ class ImagesClient:
             height=resp.height,
             cost_usd=resp.cost_usd,
             is_vector=resp.is_vector,
+            job_id=job_id,
+        )
+
+    def relight_product(
+        self,
+        product_png_path: Union[str, Path],
+        background_jpg_path: Union[str, Path],
+        output_path: Optional[Union[str, Path]] = None,
+        light_angle_deg: float = 45.0,
+        shadow_intensity: float = 0.65,
+    ) -> ImageResult:
+        """Synthesizes dual-pass physical contact shadow & directional cast shadow beneath product plate."""
+        job_id, run_dir = settings.allocate_run_dir("images")
+        target_jpg = str(output_path) if output_path else str(run_dir / f"relit_product_{job_id}.jpg")
+
+        engine = ImageEngine()
+        out_file = engine.composite_product_shadow(
+            product_png_path=str(product_png_path),
+            background_jpg_path=str(background_jpg_path),
+            output_path=target_jpg,
+            light_angle_deg=light_angle_deg,
+            shadow_intensity=shadow_intensity,
+        )
+
+        w, h = 1024, 1024
+        try:
+            from PIL import Image as PILImage
+            with PILImage.open(out_file) as im:
+                w, h = im.size
+        except Exception:
+            pass
+
+        self.parent._record_completed_job(
+            job_id=job_id,
+            engine="image",
+            run_dir=run_dir,
+            artifacts={"image": out_file},
+            telemetry={"total_cost_usd": 0.0, "operation": "contact_shadow_synthesis"},
+        )
+
+        return ImageResult(
+            file_path=out_file,
+            mime_type="image/jpeg",
+            width=w,
+            height=h,
+            cost_usd=0.0,
+            is_vector=False,
             job_id=job_id,
         )
 
@@ -424,6 +626,137 @@ class HandwritingClient:
         )
 
 
+class MotionClient:
+    """SDK client for Engine 5: Motion Graphics Studio."""
+
+    def __init__(self, parent: "OpenGenClient"):
+        self.parent = parent
+
+    def create_ad(
+        self,
+        brief: str,
+        source_footage: Optional[Union[str, Path]] = None,
+        duration: float = 18.0,
+        aspect_ratio: str = "9:16",
+        brand_id: Optional[str] = None,
+        output_mp4_path: Optional[Union[str, Path]] = None,
+        voiceover_path: Optional[str] = None,
+        music_path: Optional[str] = None,
+    ) -> MotionResult:
+        """Generates a high-converting direct-response video ad inside an isolated run folder."""
+        job_id, run_dir = settings.allocate_run_dir("motion")
+        job_tracker = CostTracker()
+        job_provider = self.parent._make_provider_manager(job_tracker)
+        target_mp4 = str(output_mp4_path) if output_mp4_path else str(run_dir / f"ad_{job_id}.mp4")
+
+        brand = self.parent.brand_kits.get(brand_id) if brand_id else None
+        engine = MotionEngine(provider_mgr=job_provider)
+
+        res = engine.generate_ad_video(
+            brief=brief,
+            output_mp4_path=target_mp4,
+            source_footage=source_footage,
+            brand=brand,
+            duration=duration,
+            aspect_ratio=aspect_ratio,
+            voiceover_path=voiceover_path,
+            music_path=music_path,
+        )
+
+        telemetry = job_tracker.get_aggregate_cost()
+        telemetry["critic_score"] = res["critic_score"]
+        self.parent._record_completed_job(
+            job_id=job_id,
+            engine="motion",
+            run_dir=run_dir,
+            artifacts={"mp4": target_mp4},
+            telemetry=telemetry,
+        )
+
+        return MotionResult(
+            file_path=target_mp4,
+            duration=res["duration"],
+            aspect_ratio=res["aspect_ratio"],
+            cost_usd=telemetry.get("total_cost_usd", 0.0),
+            critic_score=res["critic_score"],
+            critic_violations=res["critic_violations"],
+            job_id=job_id,
+        )
+
+    def reframe(
+        self,
+        input_video_path: Union[str, Path],
+        output_video_path: Optional[Union[str, Path]] = None,
+        focal_override_x: Optional[float] = None
+    ) -> str:
+        """Dynamically reframes landscape video to 9:16 vertical using LERP tracking."""
+        job_id, run_dir = settings.allocate_run_dir("motion")
+        target_mp4 = str(output_video_path) if output_video_path else str(run_dir / f"reframed_{job_id}.mp4")
+        engine = MotionEngine()
+        return engine.reframe_footage(
+            input_video_path=str(input_video_path),
+            output_video_path=target_mp4,
+            focal_override_x=focal_override_x
+        )
+
+    def audit(self, footage_path: Union[str, Path]) -> Dict[str, Any]:
+        """Audits video footage for high-saliency hooks and pacing dead-zones."""
+        engine = MotionEngine()
+        report = engine.auditor.audit_footage(str(footage_path))
+        return report.model_dump()
+
+    def list_templates(self) -> List[Dict[str, Any]]:
+        """Lists available video ad archetypes."""
+        from opengen.engines.motion.templates import MotionTemplateRegistry
+        return MotionTemplateRegistry.list_templates()
+
+    def create_from_template(
+        self,
+        template_id: str,
+        variables: Optional[Dict[str, Any]] = None,
+        brand_id: Optional[str] = None,
+        aspect_ratio: Optional[str] = None,
+        output_mp4_path: Optional[Union[str, Path]] = None,
+    ) -> MotionResult:
+        """Hydrates a pre-configured motion ad archetype and renders it."""
+        from opengen.engines.motion.templates import MotionTemplateRegistry
+        job_id, run_dir = settings.allocate_run_dir("motion")
+        target_mp4 = str(output_mp4_path) if output_mp4_path else str(run_dir / f"ad_{template_id}_{job_id}.mp4")
+
+        brand = self.parent.brand_kits.get(brand_id) if brand_id else None
+        ir = MotionTemplateRegistry.hydrate_template(
+            template_id=template_id,
+            variables=variables,
+            brand=brand,
+            aspect_ratio=aspect_ratio
+        )
+
+        engine = MotionEngine()
+        audit_res = engine.critic.audit_ad_timeline(ir)
+        if not audit_res["passed"]:
+            ir = engine.critic.auto_correct_timeline(ir, audit_res)
+
+        rendered_mp4 = engine.adapter.render_project(ir, target_mp4)
+        telemetry = {"total_cost_usd": 0.0, "template": template_id, "critic_score": audit_res["score"]}
+        self.parent._record_completed_job(
+            job_id=job_id,
+            engine="motion",
+            run_dir=run_dir,
+            artifacts={"mp4": rendered_mp4},
+            telemetry=telemetry
+        )
+
+        return MotionResult(
+            file_path=rendered_mp4,
+            duration=float(ir.get("settings", {}).get("duration", 18.0)),
+            aspect_ratio=ir.get("settings", {}).get("aspectRatio", "9:16"),
+            cost_usd=0.0,
+            critic_score=audit_res["score"],
+            critic_violations=audit_res.get("violations", []),
+            job_id=job_id
+        )
+
+
 class JobsClient:
     """SDK client for persisted job lookup and isolated per-job cost accounting."""
 
@@ -454,6 +787,37 @@ class JobsClient:
         return self.parent.session_cost_tracker.get_aggregate_cost()
 
 
+class BrandKitsClient:
+    """SDK client for Cross-Studio Brand Kits and Unified Design Tokens."""
+
+    def __init__(self, parent: "OpenGenClient"):
+        self.parent = parent
+
+    def register(self, brand: BrandKitSpec) -> BrandKitSpec:
+        """Registers a new brand kit in the local repository."""
+        return brand_kit_store.save_brand(brand)
+
+    def get(self, brand_id: str) -> Optional[BrandKitSpec]:
+        """Retrieves a registered brand kit."""
+        return brand_kit_store.get_brand(brand_id)
+
+    def list(self) -> List[BrandKitSpec]:
+        """Lists all registered brand kits."""
+        return brand_kit_store.list_brands()
+
+
+class CriticClient:
+    """SDK client for the Unified Autonomous Creative Critic Gate."""
+
+    def __init__(self, parent: "OpenGenClient"):
+        self.parent = parent
+
+    def audit(self, engine: str, payload: Dict[str, Any]) -> Dict[str, Any]:
+        """Audits any payload or project IR across Engines 1 to 5 against the Anti-Mediocrity Doctrine."""
+        from opengen.creative.quality_gate import CreativeCriticGate
+        return CreativeCriticGate.audit_any(engine=engine, payload=payload)
+
+
 class OpenGenClient:
     """
     Main entry point for the OpenGen Python SDK.
@@ -475,7 +839,10 @@ class OpenGenClient:
         self.presentations = PresentationsClient(self)
         self.images = ImagesClient(self)
         self.handwriting = HandwritingClient(self)
+        self.motion = MotionClient(self)
         self.jobs = JobsClient(self)
+        self.brand_kits = BrandKitsClient(self)
+        self.critic = CriticClient(self)
 
     def _make_provider_manager(self, job_tracker: CostTracker) -> ProviderManager:
         """Creates an isolated ProviderManager scoped to a single job."""

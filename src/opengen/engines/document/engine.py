@@ -13,6 +13,8 @@ from opengen.engines.document.docx_populator import DocxPopulator
 from opengen.engines.document.pdf_reconstructor import PdfReconstructor
 from opengen.engines.document.template.docxtpl_engine import DocxTplEngine
 from opengen.engines.document.validation.auto_corrector import AutoCorrector
+from opengen.engines.document.typst_compiler import TypstCompiler
+from opengen.domain.brand import BrandKitSpec
 
 logger = logging.getLogger(__name__)
 
@@ -73,4 +75,38 @@ class DocumentEngine:
             pdf_path=output_pdf_path,
             template_page_count=expected_page_count,
             max_iterations=max_iterations
+        )
+
+    @classmethod
+    def compile_typst(
+        cls,
+        data: Dict[str, Any],
+        output_pdf_path: str,
+        brand: Optional[BrandKitSpec] = None
+    ) -> str:
+        """Compiles high-speed Swiss Editorial PDF with Bento KPI cards via Typst."""
+        logger.info(f"Executing Typst high-speed document compilation -> {output_pdf_path}")
+        return TypstCompiler.compile_document(
+            data=data,
+            output_pdf_path=output_pdf_path,
+            brand=brand
+        )
+
+    @classmethod
+    def compile_catalog_typst(
+        cls,
+        products: List[Dict[str, Any]],
+        output_pdf_path: str,
+        title: str = "Artisan Product Catalog & Price Guide",
+        brand: Optional[BrandKitSpec] = None,
+        hero_ratio: float = 0.15
+    ) -> str:
+        """Compiles an 80/20 Swiss Editorial product catalog with Hero Bento cards and Dot-Leader menus."""
+        logger.info(f"Executing Typst retail catalog compilation -> {output_pdf_path}")
+        return TypstCompiler.compile_catalog(
+            products=products,
+            output_pdf_path=output_pdf_path,
+            title=title,
+            brand=brand,
+            hero_ratio=hero_ratio
         )

@@ -1,0 +1,35 @@
+[package]
+name = "raea-native"
+version = "0.1.0"
+edition = "2024"
+license = "FSL-1.1-ALv2"
+description = "raea's one native-call layer: the registry every host links (raea, the sandbox, the host app), the TypeScript types made from it, and the web shims bundles expect on JavaScriptCore"
+
+[lib]
+name = "raea_native"
+
+[features]
+default = ["net"]
+# the shell's network (net.rs: plain HTTP(S) under a policy, through raea-io-net); an exported game's player goes without
+net = ["raea-io-shell/net"]
+# js-exec and the module seam: the agent's TS/TSX transpiled in process (raea-modules, deno_ast) and run as ES modules
+modules = ["dep:raea-modules"]
+# QuickJS on Apple too, in place of JavaScriptCore (BEVY_TSX_ENGINE=quickjs): the Linux path tested on a Mac
+portable = ["raea-runtime-jsengine/portable"]
+
+[dependencies]
+raea-core-calls = { path = "../../core/calls" }
+# the shell's natives (fs, net, sql, archive)
+raea-io-shell = { path = "../../io/shell", default-features = false }
+serde_json = "1"
+libc = "0.2"
+sha2 = "0.10"
+sha1 = "0.10"
+getrandom = "0.3"
+url = "2"
+base64 = "0.22"
+flate2 = "1"
+raea-modules = { path = "../modules", optional = true }
+
+# the JS engines (JavaScriptCore on Apple, QuickJS elsewhere) that js-exec, the Node shim and host::install run on
+raea-runtime-jsengine = { path = "../../runtime/jsengine" }

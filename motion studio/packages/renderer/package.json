@@ -1,0 +1,13 @@
+{
+  "name": "@opengen/renderer",
+  "version": "1.0.0",
+  "description": "Headless Rendering, Frame Caching, and FFmpeg Audio Ducking/Mastering Multiplexer",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "type": "module",
+  "dependencies": {
+    "@opengen/core": "workspace:*",
+    "@opengen/engine-hyperframes": "workspace:*",
+    "@opengen/engine-pdoom": "workspace:*"
+  }
+}

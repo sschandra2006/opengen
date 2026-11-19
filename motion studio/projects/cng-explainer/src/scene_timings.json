@@ -1,0 +1,83 @@
+{
+  "total_duration": 117.11,
+  "fps": 30,
+  "scenes": [
+    {
+      "id": "scene1",
+      "title": "Intro & Overview",
+      "start": 0.0,
+      "end": 16.89,
+      "duration": 16.89,
+      "speech_start": 0.4,
+      "speech_end": 16.24,
+      "speech_duration": 15.84,
+      "text": "Hello everyone. I am Dr. Chander Amgoth Pawar, Chemistry Faculty at V N R, V J I E T. Today, we will explore Compressed Natural Gas, or CNG \u2014 its composition, properties, and applications."
+    },
+    {
+      "id": "scene2",
+      "title": "Compression & Context",
+      "start": 16.89,
+      "end": 32.29,
+      "duration": 15.4,
+      "speech_start": 17.29,
+      "speech_end": 31.64,
+      "speech_duration": 14.352,
+      "text": "Natural gas is an abundant fuel, yet at atmospheric pressure it occupies huge volume. Compressing purified gas to two hundred to two hundred fifty bar shrinks it below one percent volume for practical transport."
+    },
+    {
+      "id": "scene3",
+      "title": "Chemical Composition",
+      "start": 32.29,
+      "end": 49.28,
+      "duration": 16.99,
+      "speech_start": 32.69,
+      "speech_end": 48.63,
+      "speech_duration": 15.936,
+      "text": "In composition, CNG is predominantly methane, CH4, accounting for eighty-five to ninety-five percent by volume. It also contains small amounts of ethane, propane, and trace nitrogen and carbon dioxide."
+    },
+    {
+      "id": "scene4",
+      "title": "Physical & Combustion Properties",
+      "start": 49.28,
+      "end": 65.91,
+      "duration": 16.63,
+      "speech_start": 49.68,
+      "speech_end": 65.26,
+      "speech_duration": 15.576,
+      "text": "CNG is colorless, non-toxic, and naturally odorless, so trace mercaptan is added for leak detection. With a high octane rating near one hundred twenty to one hundred thirty, it burns smoothly and cleanly."
+    },
+    {
+      "id": "scene5",
+      "title": "Emissions & Density Comparison",
+      "start": 65.91,
+      "end": 82.13,
+      "duration": 16.22,
+      "speech_start": 66.31,
+      "speech_end": 81.48,
+      "speech_duration": 15.168,
+      "text": "Compared to petrol and diesel, CNG cuts carbon monoxide and particulate emissions dramatically. Because methane is lighter than air with specific gravity near zero point five five, leaks disperse rapidly upward."
+    },
+    {
+      "id": "scene6",
+      "title": "Safety & Flammability Limits",
+      "start": 82.13,
+      "end": 99.45,
+      "duration": 17.32,
+      "speech_start": 82.53,
+      "speech_end": 98.8,
+      "speech_duration": 16.272,
+      "text": "CNG has a narrow flammability range of just five to fifteen percent in air, and a high auto-ignition temperature near five hundred forty degrees Celsius. Reinforced cylinders and pressure relief valves minimize explosion hazards."
+    },
+    {
+      "id": "scene7",
+      "title": "Applications & Future",
+      "start": 99.45,
+      "end": 117.11,
+      "duration": 17.66,
+      "speech_start": 99.85,
+      "speech_end": 116.46,
+      "speech_duration": 16.608,
+      "text": "Today, CNG powers buses, auto-rickshaws, and passenger cars worldwide. Beyond clean transport, it fuels industrial boilers and turbines, supplies city gas networks, and expands sustainably through renewable Bio-CNG."
+    }
+  ]
+}

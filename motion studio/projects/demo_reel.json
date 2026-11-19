@@ -1,0 +1,131 @@
+{
+  "schemaVersion": "1.0.0",
+  "projectId": "demo_reel",
+  "title": "OpenGen Motion Graphics Engine Demo",
+  "settings": {
+    "width": 1080,
+    "height": 1920,
+    "fps": 30,
+    "aspectRatio": "9:16",
+    "duration": 4.0,
+    "backgroundColor": "#0b0f19"
+  },
+  "scenes": [
+    {
+      "id": "scene_hook",
+      "name": "Intro Hook",
+      "start": 0.0,
+      "duration": 2.0,
+      "backgroundColor": "#0b0f19",
+      "layers": [
+        {
+          "id": "badge",
+          "type": "text",
+          "start": 0.1,
+          "duration": 1.9,
+          "transform": { "y": -300, "opacity": 0 },
+          "content": {
+            "text": "ENGINE 5 ACTIVE",
+            "fontSize": 32,
+            "color": "#38bdf8",
+            "fontWeight": 800,
+            "letterSpacing": 6
+          },
+          "animations": [
+            {
+              "property": "opacity",
+              "start": 0.1,
+              "duration": 0.3,
+              "from": 0,
+              "to": 1,
+              "easing": "easeOutQuad"
+            },
+            {
+              "property": "y",
+              "start": 0.1,
+              "duration": 0.5,
+              "from": -350,
+              "to": -300,
+              "easing": "easeOutBack"
+            }
+          ]
+        },
+        {
+          "id": "title_text",
+          "type": "text",
+          "start": 0.3,
+          "duration": 1.7,
+          "transform": { "y": 0, "opacity": 1 },
+          "content": {
+            "text": "Deterministic AI Video Generation",
+            "fontSize": 68,
+            "color": "#ffffff",
+            "fontWeight": 900,
+            "kineticMode": "word-by-word",
+            "kineticStagger": 0.1
+          }
+        }
+      ]
+    },
+    {
+      "id": "scene_stats",
+      "name": "Metrics & Stats",
+      "start": 2.0,
+      "duration": 2.0,
+      "backgroundColor": "#070b14",
+      "layers": [
+        {
+          "id": "counter_stat",
+          "type": "chart",
+          "start": 2.1,
+          "duration": 1.9,
+          "transform": { "y": -80, "opacity": 1 },
+          "content": {
+            "chartType": "counter",
+            "chartData": {
+              "targetValue": 60,
+              "prefix": "",
+              "suffix": " FPS"
+            },
+            "fontSize": 110,
+            "fontWeight": 900,
+            "color": "#10b981"
+          },
+          "animations": [
+            {
+              "property": "scale",
+              "start": 2.1,
+              "duration": 0.5,
+              "from": 0.7,
+              "to": 1.0,
+              "easing": "easeOutBack"
+            }
+          ]
+        },
+        {
+          "id": "cta_text",
+          "type": "text",
+          "start": 2.3,
+          "duration": 1.7,
+          "transform": { "y": 180, "opacity": 0 },
+          "content": {
+            "text": "Hardware NVENC Accelerated",
+            "fontSize": 44,
+            "color": "#94a3b8",
+            "fontWeight": 700
+          },
+          "animations": [
+            {
+              "property": "opacity",
+              "start": 2.3,
+              "duration": 0.4,
+              "from": 0,
+              "to": 1,
+              "easing": "easeOutQuad"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

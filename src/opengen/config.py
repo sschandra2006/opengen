@@ -25,6 +25,7 @@ class Settings(BaseSettings):
     DATA_DIR: Path = PROJECT_ROOT / "data"
     CACHE_DIR: Path = PROJECT_ROOT / "cache"
     UPLOAD_DIR: Path = PROJECT_ROOT / "data" / "uploads"
+    BRANDS_DIR: Path = PROJECT_ROOT / "data" / "brands"
     OUTPUT_DIR: Path = PROJECT_ROOT / "output"
     TEMPLATES_DIR: Path = PROJECT_ROOT / "templates"
     DB_PATH: Path = PROJECT_ROOT / "cache" / "metadata.db"
