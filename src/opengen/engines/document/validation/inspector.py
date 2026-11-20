@@ -5,7 +5,10 @@ margin violations, and broken tables using PyMuPDF.
 """
 import logging
 from typing import List
-import fitz
+try:
+    import pymupdf as fitz
+except ImportError:
+    import fitz
 
 from opengen.domain.document import (
     FormattingValidationReport, PageVisualInspection, VisualIssue

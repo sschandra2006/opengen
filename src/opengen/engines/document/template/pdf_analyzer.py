@@ -6,7 +6,10 @@ and placeholders from PDF templates. Uses PyMuPDF.
 import re
 from pathlib import Path
 from typing import List, Dict, Any, Optional
-import fitz
+try:
+    import pymupdf as fitz
+except ImportError:
+    import fitz
 
 from opengen.domain.document import (
     TemplateProfile, Margins, FontProfile, TableProfile,

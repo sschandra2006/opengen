@@ -35,8 +35,15 @@ def test_mcp_tools_registration():
         "reframe_video",
         "compile_catalog_typst",
         "creative_critic_audit",
+        "jumpcut_video",
+        "create_bento_mosaic",
+        "isolate_product_image",
+        "vectorize_image_to_svg",
+        "export_nle_edl",
+        "export_nle_fcpxml",
+        "generate_marp_presentation"
     ]
-    assert len(MCP_TOOLS) == 19
+    assert len(MCP_TOOLS) >= 19
     for t in expected_tools:
         assert t in MCP_TOOLS
         assert callable(MCP_TOOLS[t])

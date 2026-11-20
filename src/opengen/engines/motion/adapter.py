@@ -58,6 +58,7 @@ class MotionSubprocessAdapter:
                 "render-ad",
                 "--brief", project_ir.get("title", "Ad"),
                 "--out", str(out_file),
+                "--run-dir", str(out_file.parent),
                 "--fps", str(fps)
             ]
             logger.info(f"Executing Motion Studio renderer: {' '.join(cmd)}")

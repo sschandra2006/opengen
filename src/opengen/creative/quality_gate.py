@@ -11,10 +11,13 @@ from typing import Dict, Any, List, Optional
 import re
 from opengen.engines.document.sku_classifier import SemanticSKUClassifier
 from opengen.engines.motion.ad_critic import AdCriticAgent
+from opengen.creative.quality_gauntlet import QualityGauntlet
 
 
 class CreativeCriticGate:
     """Centralized quality gate enforcing creative standards across all 5 studios."""
+
+    gauntlet = QualityGauntlet
 
     @classmethod
     def audit_document(cls, doc_data: Dict[str, Any]) -> Dict[str, Any]:

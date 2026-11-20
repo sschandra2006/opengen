@@ -12,6 +12,7 @@ from opengen.engines.presentation.planner import PresentationPlanner
 from opengen.engines.presentation.builder import PresentationBuilder
 from opengen.engines.presentation.regenerate import SlideRegenerator
 from opengen.engines.presentation.bento_compiler import BentoSlideCompiler
+from opengen.engines.presentation.marp_compiler import MarpSlideCompiler
 
 logger = logging.getLogger(__name__)
 
@@ -81,6 +82,29 @@ class PresentationEngine:
         )
 
         return deck_spec, output_pptx_path, html_path
+
+    def compile_marp_presentation(
+        self,
+        topic: str,
+        output_md_path: str,
+        slide_count: int = 7,
+        brand: Optional[BrandKitSpec] = None,
+        source_materials: Optional[str] = None
+    ) -> Tuple[PresentationDeckSpec, str]:
+        """Plans and compiles a standard Marp/Slidev Markdown presentation."""
+        deck_spec = self.planner.plan_deck(
+            topic=topic,
+            slide_count=slide_count,
+            theme_name=brand.brandId if brand else "modern_corporate",
+            source_materials=source_materials,
+            use_bento=True
+        )
+        MarpSlideCompiler.compile_deck_to_markdown(
+            deck=deck_spec,
+            output_md_path=output_md_path,
+            brand=brand
+        )
+        return deck_spec, output_md_path
 
     def regenerate_slide(
         self,

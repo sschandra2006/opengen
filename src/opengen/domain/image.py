@@ -15,6 +15,8 @@ class ImageRequest(BaseModel):
     apply_optical_physics: bool = True
     reserve_negative_space: bool = False
     brand_id: Optional[str] = None
+    seed: Optional[int] = None
+    bypass_cache: bool = False
 
 class ImageResponse(BaseModel):
     file_path: str

@@ -61,6 +61,66 @@ class MotionTemplateRegistry:
                 "cta_text": "ORDER FARM-FRESH GHEE",
                 "cta_url": "sangamdairy.com/ghee"
             }
+        },
+        "tech_minimalist": {
+            "name": "Tech Minimalist & Code Velocity",
+            "aspect_ratio": "16:9",
+            "duration": 20.0,
+            "description": "Monospaced code aesthetics, dark obsidian surface, glowing cyan accents, and terminal punch-ins.",
+            "default_vars": {
+                "hook_title": "$ opengen compile --prod",
+                "hook_subtitle": "Sub-30ms Deterministic Generation",
+                "problem": "LLMs hallucinate layout coordinates and CSS styles.",
+                "solution": "Deterministic Compilers with Zero-Pixel Semantic IR",
+                "features": ["Rust Typst Engine", "12-Col Bento Solver", "FastMCP Bridge"],
+                "cta_text": "DEPLOY IN 1 MINUTE",
+                "cta_url": "github.com/opengen"
+            }
+        },
+        "kinetic_velocity": {
+            "name": "Kinetic Velocity & High-Impact Beat",
+            "aspect_ratio": "9:16",
+            "duration": 15.0,
+            "description": "Ultra-fast pacing, high-contrast neon typography, 1.25x punch-ins on every downbeat.",
+            "default_vars": {
+                "hook_title": "THIS CHANGES EVERYTHING",
+                "hook_subtitle": "Stop Wasting 4 Hours on Slide Decks",
+                "problem": "Bullet points kill audience attention.",
+                "solution": "Convert Raw Ideas to Bento Decks in Seconds",
+                "features": ["Zero Bullet Points", "Auto-Contrast Grids", "Instant PPTX & HTML"],
+                "cta_text": "CREATE YOUR DECK NOW",
+                "cta_url": "opengen.dev/pitch"
+            }
+        },
+        "b2b_explainer": {
+            "name": "B2B SaaS Metric Explainer",
+            "aspect_ratio": "16:9",
+            "duration": 24.0,
+            "description": "Sequoia/YC persuasion arc with KPI metric popouts, before-and-after traction curves.",
+            "default_vars": {
+                "hook_title": "Scale Document Operations 10x",
+                "hook_subtitle": "From Unstructured Mess to Sovereign Perfection",
+                "problem": "Manual formatting eats 22% of enterprise payroll.",
+                "solution": "Unified Multimodal Creative Intelligence",
+                "features": ["$14.2M ARR Proven", "Zero Broken Page Splits", "Full Self-Hostable"],
+                "cta_text": "BOOK ENTERPRISE DEMO",
+                "cta_url": "opengen.dev/enterprise"
+            }
+        },
+        "split_screen_mosaic": {
+            "name": "Bento Split-Screen Comparative Mosaic",
+            "aspect_ratio": "9:16",
+            "duration": 18.0,
+            "description": "3-panel synchronized Bento Grid showing product demo, talking head, and live metrics simultaneously.",
+            "default_vars": {
+                "hook_title": "THE ALL-IN-ONE SOLUTION",
+                "hook_subtitle": "Watch It Work in Real Time",
+                "problem": "Too many disconnected creative tools.",
+                "solution": "One Sovereign OpenGen Engine",
+                "features": ["Synchronized Multi-Cam", "Dynamic Bento Grid", "EBU R128 Audio"],
+                "cta_text": "EXPLORE THE SUITE",
+                "cta_url": "opengen.dev/studio"
+            }
         }
     }
 

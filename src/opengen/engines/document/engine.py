@@ -110,3 +110,61 @@ class DocumentEngine:
             brand=brand,
             hero_ratio=hero_ratio
         )
+
+    @classmethod
+    def compile_reference_to_typst_catalog(
+        cls,
+        reference_pdf_path: str,
+        output_pdf_path: str,
+        title: Optional[str] = None,
+        brand: Optional[BrandKitSpec] = None,
+        hero_ratio: float = 0.15
+    ) -> str:
+        """
+        End-to-end pipeline: Extracts tables/products from reference PDF,
+        partitions into 80/20 hierarchy, and compiles to Swiss Typst PDF.
+        """
+        from opengen.engines.document.reference.pymupdf_extractor import PyMuPDFExtractor
+        extracted = PyMuPDFExtractor.extract_document(reference_pdf_path)
+        tables = extracted.get("tables", [])
+        products = []
+        for t in tables:
+            headers = [h.lower() for h in t.headers]
+            for row in t.rows:
+                p_entry = {}
+                for idx, cell in enumerate(row):
+                    if idx < len(headers):
+                        h = headers[idx]
+                        if any(k in h for k in ["name", "item", "product", "description"]):
+                            p_entry["name"] = cell
+                        elif any(k in h for k in ["price", "mrp", "rate", "cost"]):
+                            p_entry["price"] = cell
+                        elif any(k in h for k in ["category", "type", "group"]):
+                            p_entry["category"] = cell
+                        elif any(k in h for k in ["spec", "weight", "volume", "unit"]):
+                            p_entry["spec"] = cell
+                    else:
+                        p_entry[f"col_{idx}"] = cell
+                if p_entry.get("name"):
+                    products.append(p_entry)
+
+        # Fallback if no tabular products detected: parse extracted text lines
+        if not products:
+            text = extracted.get("full_text", "")
+            for line in text.split("\n"):
+                clean_l = line.strip()
+                if " - " in clean_l and len(clean_l) < 80:
+                    parts = clean_l.split(" - ")
+                    products.append({"name": parts[0].strip(), "price": parts[-1].strip()})
+                elif any(curr in clean_l for curr in ["₹", "$", "Rs", "USD", "·"]) and len(clean_l) < 80:
+                    parts = clean_l.split()
+                    products.append({"name": " ".join(parts[:-1]), "price": parts[-1]})
+
+        doc_title = title or f"{Path(reference_pdf_path).stem.replace('_', ' ').title()} Catalog"
+        return cls.compile_catalog_typst(
+            products=products,
+            output_pdf_path=output_pdf_path,
+            title=doc_title,
+            brand=brand,
+            hero_ratio=hero_ratio
+        )

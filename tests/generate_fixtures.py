@@ -5,7 +5,10 @@ from pathlib import Path
 import docx
 from docx.shared import Inches, Pt, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH
-import fitz
+try:
+    import pymupdf as fitz
+except ImportError:
+    import fitz
 from PIL import Image, ImageDraw, ImageFont
 
 FIXTURES_DIR = Path(__file__).resolve().parent / "fixtures"

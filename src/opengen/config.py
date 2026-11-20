@@ -28,6 +28,7 @@ class Settings(BaseSettings):
     BRANDS_DIR: Path = PROJECT_ROOT / "data" / "brands"
     OUTPUT_DIR: Path = PROJECT_ROOT / "output"
     TEMPLATES_DIR: Path = PROJECT_ROOT / "templates"
+    SFX_DIR: Path = PROJECT_ROOT / "data" / "sfx"
     DB_PATH: Path = PROJECT_ROOT / "cache" / "metadata.db"
     JOBS_DB_PATH: Path = PROJECT_ROOT / "cache" / "jobs.db"
 
@@ -52,8 +53,12 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: Optional[str] = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
     OPENAI_API_KEY: Optional[str] = os.environ.get("OPENAI_API_KEY")
     ANTHROPIC_API_KEY: Optional[str] = os.environ.get("ANTHROPIC_API_KEY")
+    DEEPSEEK_API_KEY: Optional[str] = os.environ.get("DEEPSEEK_API_KEY")
+    OPENROUTER_API_KEY: Optional[str] = os.environ.get("OPENROUTER_API_KEY")
     TOGETHER_API_KEY: Optional[str] = os.environ.get("TOGETHER_API_KEY") or os.environ.get("TOGETHERAI_API_KEY")
     RECRAFT_API_KEY: Optional[str] = os.environ.get("RECRAFT_API_KEY")
+    VLLM_BASE_URL: str = os.environ.get("VLLM_BASE_URL", "http://localhost:8000/v1")
+    LOCAL_LLM_BASE_URL: str = os.environ.get("LOCAL_LLM_BASE_URL", "http://localhost:1234/v1")
 
     # Processing Limits
     MAX_VALIDATION_ATTEMPTS: int = 3
@@ -61,7 +66,7 @@ class Settings(BaseSettings):
 
     def ensure_directories(self):
         """Idempotently creates necessary working directories."""
-        for path in [self.DATA_DIR, self.CACHE_DIR, self.UPLOAD_DIR, self.OUTPUT_DIR]:
+        for path in [self.DATA_DIR, self.CACHE_DIR, self.UPLOAD_DIR, self.OUTPUT_DIR, self.SFX_DIR]:
             path.mkdir(parents=True, exist_ok=True)
 
     def allocate_run_dir(self, engine: str, job_id: Optional[str] = None) -> Tuple[str, Path]:

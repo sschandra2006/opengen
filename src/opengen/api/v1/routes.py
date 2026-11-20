@@ -569,3 +569,122 @@ def relight_product(req: RelightImageRequest):
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# -------------------------------------------------------------------------
+# Ecosystem Adapters: OneTake, Collage B-Roll, Matting & NLE Endpoints
+# -------------------------------------------------------------------------
+
+class MotionJumpCutRequest(BaseModel):
+    video_path: str
+    silence_thresh_sec: float = 0.35
+    zoom_punch_scale: float = 1.25
+
+
+class MotionCollageRequest(BaseModel):
+    clip_paths: List[str]
+    duration: float = 4.0
+    aspect_ratio: str = "9:16"
+
+
+class MotionTimelineExportRequest(BaseModel):
+    project_ir: Dict[str, Any]
+
+
+class ImageIsolateRequest(BaseModel):
+    image_path: str
+
+
+class ImageVectorizeRequest(BaseModel):
+    image_path: str
+    color_hex: str = "#38bdf8"
+
+
+class MarpPresentationRequest(BaseModel):
+    topic: str
+    slide_count: int = 7
+    brand_id: Optional[str] = None
+    source_materials: Optional[str] = None
+
+
+@router.post("/motion/jumpcut")
+def jumpcut_video(req: MotionJumpCutRequest):
+    """Surgically cuts dead air pauses (>0.35s) and injects alternating camera punch-ins."""
+    try:
+        out_p = client.motion.jumpcut(
+            input_video_path=req.video_path,
+            silence_thresh_sec=req.silence_thresh_sec,
+            zoom_punch_scale=req.zoom_punch_scale
+        )
+        return {"status": "completed", "output_path": out_p}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/motion/collage")
+def collage_broll(req: MotionCollageRequest):
+    """Assembles 2 to 4 video feeds into an animated 9:16 Bento Box mosaic."""
+    try:
+        out_p = client.motion.create_collage(
+            clips=req.clip_paths,
+            duration=req.duration,
+            aspect_ratio=req.aspect_ratio
+        )
+        return {"status": "completed", "output_path": out_p}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/motion/export/edl")
+def export_nle_edl(req: MotionTimelineExportRequest):
+    """Exports OpenGen IR timeline into CMX 3600 EDL for DaVinci Resolve."""
+    try:
+        edl_text = client.motion.export_edl(req.project_ir)
+        return {"status": "completed", "edl_content": edl_text}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/motion/export/fcpxml")
+def export_nle_fcpxml(req: MotionTimelineExportRequest):
+    """Exports OpenGen IR timeline into Apple FCPXML v1.9."""
+    try:
+        xml_text = client.motion.export_fcpxml(req.project_ir)
+        return {"status": "completed", "fcpxml_content": xml_text}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/images/isolate")
+def isolate_product_image(req: ImageIsolateRequest):
+    """Removes background from product or portrait photo, producing a transparent PNG."""
+    try:
+        out_p = client.images.isolate(req.image_path)
+        return {"status": "completed", "output_path": out_p}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/images/vectorize")
+def vectorize_raster_image(req: ImageVectorizeRequest):
+    """Converts raster image or silhouette into clean mathematical SVG paths."""
+    try:
+        out_p = client.images.vectorize(req.image_path, color_hex=req.color_hex)
+        return {"status": "completed", "svg_path": out_p}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/presentations/marp")
+def generate_marp_deck(req: MarpPresentationRequest):
+    """Generates standard Marp/Slidev Markdown deck for developer presentations."""
+    try:
+        _, md_path = client.presentations.generate_marp(
+            topic=req.topic,
+            slide_count=req.slide_count,
+            brand_id=req.brand_id,
+            source_materials=req.source_materials
+        )
+        return {"status": "completed", "markdown_path": md_path}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

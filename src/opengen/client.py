@@ -18,13 +18,13 @@ import shutil
 import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional, List, Dict, Any, Union
+from typing import Optional, List, Dict, Any, Union, Tuple
 
 from opengen.config import settings
 from opengen.domain.job import JobRecord, JobStatus
 from opengen.domain.document import TemplateProfile, MappingReport
 from opengen.domain.image import ImageRequest
-from opengen.domain.presentation import SlideSpec
+from opengen.domain.presentation import SlideSpec, PresentationDeckSpec
 from opengen.domain.handwriting import HandwritingProfile
 from opengen.domain.brand import BrandKitSpec
 from opengen.brand.store import brand_kit_store
@@ -106,6 +106,7 @@ class MotionResult:
     cost_usd: float = 0.0
     critic_score: int = 100
     critic_violations: List[str] = field(default_factory=list)
+    media_scanned: int = 0
     job_id: Optional[str] = None
 
     def save(self, destination: Union[str, Path]) -> str:
@@ -286,6 +287,43 @@ class DocumentsClient:
             job_id=job_id,
         )
 
+    def compile_reference_catalog(
+        self,
+        reference_pdf_path: Union[str, Path],
+        output_pdf_path: Optional[Union[str, Path]] = None,
+        title: Optional[str] = None,
+        brand_id: Optional[str] = None,
+        hero_ratio: float = 0.15
+    ) -> DocumentResult:
+        """Extracts products from reference PDF and compiles an 80/20 Swiss Typst catalog."""
+        job_id, run_dir = settings.allocate_run_dir("documents")
+        out_pdf = str(output_pdf_path) if output_pdf_path else str(run_dir / f"typst_catalog_{job_id}.pdf")
+        brand = self.parent.brand_kits.get(brand_id) if brand_id else None
+
+        res_pdf = DocumentEngine.compile_reference_to_typst_catalog(
+            reference_pdf_path=str(reference_pdf_path),
+            output_pdf_path=out_pdf,
+            title=title,
+            brand=brand,
+            hero_ratio=hero_ratio
+        )
+
+        self.parent._record_completed_job(
+            job_id=job_id,
+            engine="document",
+            run_dir=run_dir,
+            artifacts={"pdf": res_pdf},
+            telemetry={"total_cost_usd": 0.0, "compiler": "typst_reference_catalog"},
+        )
+
+        return DocumentResult(
+            docx_path=res_pdf,
+            pdf_path=res_pdf,
+            page_count=1,
+            cost_usd=0.0,
+            job_id=job_id,
+        )
+
     def compile_catalog_typst(
         self,
         products: List[Dict[str, Any]],
@@ -314,6 +352,43 @@ class DocumentsClient:
             run_dir=run_dir,
             artifacts=artifacts,
             telemetry={"total_cost_usd": 0.0, "compiler": "typst_catalog"},
+        )
+
+        return DocumentResult(
+            docx_path=res_pdf,
+            pdf_path=res_pdf,
+            page_count=1,
+            cost_usd=0.0,
+            job_id=job_id,
+        )
+
+    def compile_reference_catalog(
+        self,
+        reference_pdf_path: Union[str, Path],
+        output_pdf_path: Optional[Union[str, Path]] = None,
+        title: Optional[str] = None,
+        brand_id: Optional[str] = None,
+        hero_ratio: float = 0.15
+    ) -> DocumentResult:
+        """Extracts products from reference PDF and compiles an 80/20 Swiss Typst catalog."""
+        job_id, run_dir = settings.allocate_run_dir("documents")
+        out_pdf = str(output_pdf_path) if output_pdf_path else str(run_dir / f"typst_catalog_{job_id}.pdf")
+        brand = self.parent.brand_kits.get(brand_id) if brand_id else None
+
+        res_pdf = DocumentEngine.compile_reference_to_typst_catalog(
+            reference_pdf_path=str(reference_pdf_path),
+            output_pdf_path=out_pdf,
+            title=title,
+            brand=brand,
+            hero_ratio=hero_ratio
+        )
+
+        self.parent._record_completed_job(
+            job_id=job_id,
+            engine="document",
+            run_dir=run_dir,
+            artifacts={"pdf": res_pdf},
+            telemetry={"total_cost_usd": 0.0, "compiler": "typst_reference_catalog"},
         )
 
         return DocumentResult(
@@ -460,6 +535,37 @@ class PresentationsClient:
             job_id=job_id,
         )
 
+    def generate_marp(
+        self,
+        topic: str,
+        output_md_path: Optional[Union[str, Path]] = None,
+        slide_count: int = 7,
+        brand_id: Optional[str] = None,
+        source_materials: Optional[str] = None
+    ) -> Tuple[PresentationDeckSpec, str]:
+        """Plans and compiles a standard Marp/Slidev Markdown deck."""
+        job_id, run_dir = settings.allocate_run_dir("presentations")
+        target_md = str(output_md_path) if output_md_path else str(run_dir / f"deck_{job_id}.md")
+        brand = brand_kit_store.get_brand(brand_id) if brand_id else None
+        engine = PresentationEngine()
+
+        deck_spec, md_path = engine.compile_marp_presentation(
+            topic=topic,
+            output_md_path=target_md,
+            slide_count=slide_count,
+            brand=brand,
+            source_materials=source_materials
+        )
+
+        self.parent._record_completed_job(
+            job_id=job_id,
+            engine="presentation",
+            run_dir=run_dir,
+            artifacts={"md": md_path},
+            telemetry={"total_cost_usd": 0.0, "format": "marp_markdown"},
+        )
+        return deck_spec, md_path
+
 
 class ImagesClient:
     """SDK client for Engine C: Image Generation."""
@@ -478,6 +584,8 @@ class ImagesClient:
         apply_optical_physics: bool = True,
         reserve_negative_space: bool = False,
         brand_id: Optional[str] = None,
+        seed: Optional[int] = None,
+        bypass_cache: bool = False,
     ) -> ImageResult:
         """Generates a raster (FLUX/DALL-E) or vector SVG (Recraft) asset into an isolated run directory."""
         job_id, run_dir = settings.allocate_run_dir("images")
@@ -492,6 +600,8 @@ class ImagesClient:
             apply_optical_physics=apply_optical_physics,
             reserve_negative_space=reserve_negative_space,
             brand_id=brand_id,
+            seed=seed,
+            bypass_cache=bypass_cache,
         )
         resp = engine.generate_image(req, output_dir=run_dir)
 
@@ -560,6 +670,47 @@ class ImagesClient:
             is_vector=False,
             job_id=job_id,
         )
+
+    def isolate(
+        self,
+        image_path: Union[str, Path],
+        output_path: Optional[Union[str, Path]] = None
+    ) -> str:
+        """Removes background from product/subject image, returning transparent RGBA PNG."""
+        job_id, run_dir = settings.allocate_run_dir("images")
+        target_png = str(output_path) if output_path else str(run_dir / f"isolated_{job_id}.png")
+        engine = ImageEngine()
+        out_file = engine.isolate_product(str(image_path), target_png)
+
+        self.parent._record_completed_job(
+            job_id=job_id,
+            engine="image",
+            run_dir=run_dir,
+            artifacts={"image": out_file},
+            telemetry={"total_cost_usd": 0.0, "operation": "background_isolation"},
+        )
+        return out_file
+
+    def vectorize(
+        self,
+        image_path: Union[str, Path],
+        output_path: Optional[Union[str, Path]] = None,
+        color_hex: str = "#38bdf8"
+    ) -> str:
+        """Traces contours and converts raster image into clean SVG."""
+        job_id, run_dir = settings.allocate_run_dir("images")
+        target_svg = str(output_path) if output_path else str(run_dir / f"vector_{job_id}.svg")
+        engine = ImageEngine()
+        out_file = engine.raster_to_svg(str(image_path), target_svg, color_hex=color_hex)
+
+        self.parent._record_completed_job(
+            job_id=job_id,
+            engine="image",
+            run_dir=run_dir,
+            artifacts={"svg": out_file},
+            telemetry={"total_cost_usd": 0.0, "operation": "raster_to_svg"},
+        )
+        return out_file
 
 
 class HandwritingClient:
@@ -754,6 +905,139 @@ class MotionClient:
             critic_score=audit_res["score"],
             critic_violations=audit_res.get("violations", []),
             job_id=job_id
+        )
+
+    def generate_from_folder(
+        self,
+        folder_path: Union[str, Path],
+        brief: Optional[str] = None,
+        brand_id: Optional[str] = None,
+        duration: float = 18.0,
+        aspect_ratio: str = "9:16",
+        output_mp4_path: Optional[Union[str, Path]] = None,
+        voiceover_path: Optional[str] = None,
+        music_path: Optional[str] = None,
+    ) -> MotionResult:
+        """
+        Ingests a user folder of raw footage/images, audits saliency, plans a 5-phase conversion ad,
+        masters Foley sound cues, and exports cleanly into an isolated run directory.
+        """
+        job_id, run_dir = settings.allocate_run_dir("motion")
+        target_mp4 = str(output_mp4_path) if output_mp4_path else str(run_dir / f"folder_ad_{job_id}.mp4")
+
+        brand = self.parent.brand_kits.get(brand_id) if brand_id else None
+        engine = MotionEngine()
+
+        res = engine.generate_ad_from_folder(
+            folder_path=folder_path,
+            output_mp4_path=target_mp4,
+            brief=brief,
+            brand=brand,
+            duration=duration,
+            aspect_ratio=aspect_ratio,
+            voiceover_path=voiceover_path,
+            music_path=music_path,
+        )
+
+        telemetry = {
+            "total_cost_usd": 0.0,
+            "media_scanned": res["media_scanned"],
+            "critic_score": res["critic_score"],
+            "folder": str(folder_path),
+        }
+        self.parent._record_completed_job(
+            job_id=job_id,
+            engine="motion",
+            run_dir=run_dir,
+            artifacts={"mp4": target_mp4},
+            telemetry=telemetry,
+        )
+
+        return MotionResult(
+            file_path=target_mp4,
+            duration=res["duration"],
+            aspect_ratio=res["aspect_ratio"],
+            cost_usd=0.0,
+            critic_score=res["critic_score"],
+            critic_violations=res["critic_violations"],
+            media_scanned=res["media_scanned"],
+            job_id=job_id,
+        )
+
+    def jumpcut(
+        self,
+        input_video_path: Union[str, Path],
+        output_video_path: Optional[Union[str, Path]] = None,
+        silence_thresh_sec: float = 0.35,
+        zoom_punch_scale: float = 1.25
+    ) -> str:
+        """Removes dead air (>0.35s) and injects alternating 1.0x <-> 1.25x punch-ins."""
+        job_id, run_dir = settings.allocate_run_dir("motion")
+        target_mp4 = str(output_video_path) if output_video_path else str(run_dir / f"jumpcut_{job_id}.mp4")
+        engine = MotionEngine()
+        out_file = engine.jump_cut_talking_head(
+            input_video=str(input_video_path),
+            output_video=target_mp4,
+            silence_thresh_sec=silence_thresh_sec,
+            zoom_punch_scale=zoom_punch_scale
+        )
+        self.parent._record_completed_job(
+            job_id=job_id,
+            engine="motion",
+            run_dir=run_dir,
+            artifacts={"mp4": out_file},
+            telemetry={"total_cost_usd": 0.0, "operation": "onetake_jumpcut"},
+        )
+        return out_file
+
+    def create_collage(
+        self,
+        clips: List[Union[str, Path]],
+        output_video_path: Optional[Union[str, Path]] = None,
+        duration: float = 4.0,
+        aspect_ratio: str = "9:16"
+    ) -> str:
+        """Assembles 2 to 4 video clips into an animated Bento Box mosaic."""
+        job_id, run_dir = settings.allocate_run_dir("motion")
+        target_mp4 = str(output_video_path) if output_video_path else str(run_dir / f"collage_{job_id}.mp4")
+        engine = MotionEngine()
+        out_file = engine.create_bento_mosaic(
+            clips=[str(c) for c in clips],
+            output_video=target_mp4,
+            duration=duration,
+            aspect_ratio=aspect_ratio
+        )
+        self.parent._record_completed_job(
+            job_id=job_id,
+            engine="motion",
+            run_dir=run_dir,
+            artifacts={"mp4": out_file},
+            telemetry={"total_cost_usd": 0.0, "operation": "bento_mosaic_collage"},
+        )
+        return out_file
+
+    def export_edl(
+        self,
+        project_ir: Dict[str, Any],
+        output_edl_path: Optional[Union[str, Path]] = None
+    ) -> str:
+        """Exports an OpenGen IR timeline into CMX 3600 EDL for DaVinci Resolve."""
+        engine = MotionEngine()
+        return engine.export_timeline_edl(
+            project_ir=project_ir,
+            output_edl_path=str(output_edl_path) if output_edl_path else None
+        )
+
+    def export_fcpxml(
+        self,
+        project_ir: Dict[str, Any],
+        output_fcpxml_path: Optional[Union[str, Path]] = None
+    ) -> str:
+        """Exports an OpenGen IR timeline into Apple FCPXML v1.9."""
+        engine = MotionEngine()
+        return engine.export_timeline_fcpxml(
+            project_ir=project_ir,
+            output_fcpxml_path=str(output_fcpxml_path) if output_fcpxml_path else None
         )
 
 

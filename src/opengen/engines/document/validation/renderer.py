@@ -9,7 +9,10 @@ import shutil
 import logging
 from pathlib import Path
 from typing import Optional
-import fitz
+try:
+    import pymupdf as fitz
+except ImportError:
+    import fitz
 
 logger = logging.getLogger(__name__)
 

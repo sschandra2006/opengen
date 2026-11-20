@@ -28,7 +28,7 @@ export interface OpenGenEngine5Plugin {
   checkStatus(): Promise<Engine5Status>;
 
   /** Render project IR directly to MP4 */
-  render(project: OpenGenProject, options?: { outputPath?: string; fps?: number }): Promise<string>;
+  render(project: OpenGenProject, options?: { outputPath?: string; runDir?: string; fps?: number }): Promise<string>;
 
   /** Execute a pre-packaged template with hydrated variables */
   renderTemplate(templateId: string, variables: Record<string, any>, outputPath?: string): Promise<string>;
@@ -83,7 +83,7 @@ export class MotionGraphicsEngineAdapter implements OpenGenEngine5Plugin {
     };
   }
 
-  public async render(project: OpenGenProject, options?: { outputPath?: string; fps?: number }): Promise<string> {
+  public async render(project: OpenGenProject, options?: { outputPath?: string; runDir?: string; fps?: number }): Promise<string> {
     return this.runner.renderProject(project, options);
   }
 

@@ -3,7 +3,10 @@ OCR Fallback Extractor for Scanned Reference Documents using RapidOCR.
 """
 import logging
 from typing import Tuple
-import fitz
+try:
+    import pymupdf as fitz
+except ImportError:
+    import fitz
 
 logger = logging.getLogger(__name__)
 

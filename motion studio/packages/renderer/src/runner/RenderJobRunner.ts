@@ -9,6 +9,7 @@ import * as fs from 'node:fs';
 
 export interface RenderJobOptions {
   outputPath?: string;
+  runDir?: string;
   fps?: number;
   crf?: number;
   useCache?: boolean;
@@ -31,7 +32,9 @@ export class RenderJobRunner {
 
     const fps = options.fps || project.settings.fps || 30;
     const finalOut = options.outputPath || path.resolve(process.cwd(), 'out', 'final', `${project.projectId}.mp4`);
-    const tempDir = path.resolve(process.cwd(), 'out', 'wip', project.projectId);
+    const tempDir = options.runDir 
+      ? path.resolve(options.runDir, 'wip')
+      : path.resolve(path.dirname(finalOut), 'wip', project.projectId);
 
     if (!fs.existsSync(tempDir)) {
       fs.mkdirSync(tempDir, { recursive: true });

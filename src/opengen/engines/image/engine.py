@@ -16,6 +16,8 @@ from opengen.engines.image.cache import ImageCache
 from opengen.engines.image.compositor import ImageCompositor
 from opengen.engines.image.optical_director import OpticalPromptDirector
 from opengen.engines.image.shadow_synthesizer import StudioShadowSynthesizer
+from opengen.engines.image.matting import StudioMattingEngine
+from opengen.engines.image.vectorizer import RasterVectorizer
 from opengen.engines.image.providers.together_flux import TogetherFluxAdapter
 from opengen.engines.image.providers.openai_dalle import OpenAIDalleAdapter
 from opengen.engines.image.providers.recraft_vector import RecraftVectorAdapter
@@ -64,10 +66,11 @@ class ImageEngine:
             target_provider,
             output_format=request.output_format,
             transparent_background=request.transparent_background,
+            seed=request.seed,
         )
 
         # 1. Check persistent L2 cache (stored immutably inside cache/images/, never output/)
-        cached_path = ImageCache.get_cached_image(prompt_hash)
+        cached_path = None if request.bypass_cache else ImageCache.get_cached_image(prompt_hash)
         if cached_path and Path(cached_path).exists():
             logger.info("Retrieved image from L2 cache (0 credits consumed)")
             cached_src = Path(cached_path)
@@ -166,6 +169,31 @@ class ImageEngine:
             light_angle_deg=light_angle_deg,
             shadow_intensity=shadow_intensity
         )
+
+    def isolate_product(
+        self,
+        image_path: str,
+        output_path: Optional[str] = None
+    ) -> str:
+        """Removes background from product image, returning transparent RGBA PNG."""
+        out_p = output_path or str(Path(image_path).with_name(f"{Path(image_path).stem}_isolated.png"))
+        StudioMattingEngine.remove_background(image_path, output_path=out_p)
+        return str(out_p)
+
+    def raster_to_svg(
+        self,
+        image_path: str,
+        output_svg_path: Optional[str] = None,
+        color_hex: str = "#38bdf8"
+    ) -> str:
+        """Traces contours and converts raster image into clean SVG file."""
+        out_svg = output_svg_path or str(Path(image_path).with_suffix(".svg"))
+        RasterVectorizer.vectorize_to_svg(
+            image_input=image_path,
+            output_svg_path=out_svg,
+            color_hex=color_hex
+        )
+        return str(out_svg)
 
 
 image_engine = ImageEngine()

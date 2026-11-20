@@ -5,7 +5,10 @@ Extracts structured text, tables, and headings with page numbers and confidence 
 import logging
 from pathlib import Path
 from typing import List, Dict, Any
-import fitz
+try:
+    import pymupdf as fitz
+except ImportError:
+    import fitz
 
 from opengen.domain.document import ExtractedTable
 from opengen.engines.document.reference.ocr_extractor import OCRExtractor

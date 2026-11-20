@@ -17,8 +17,10 @@ class ImageCache:
         provider: str,
         output_format: str = "png",
         transparent_background: bool = False,
+        seed: Optional[int] = None,
     ) -> str:
-        key = f"{prompt.strip().lower()}|{aspect_ratio}|{style}|{provider}|{output_format}|{transparent_background}"
+        seed_part = f"|{seed}" if seed is not None else ""
+        key = f"{prompt.strip().lower()}|{aspect_ratio}|{style}|{provider}|{output_format}|{transparent_background}{seed_part}"
         return hashlib.sha256(key.encode("utf-8")).hexdigest()
 
     @classmethod

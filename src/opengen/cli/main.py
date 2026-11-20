@@ -196,6 +196,24 @@ def pres_bento(
     console.print(f"Total slides: [yellow]{res.slide_count}[/yellow] | 12-Column Responsive Bento Grid & Sequoia Narrative Arc applied.")
 
 
+@pres_app.command("marp")
+def pres_marp(
+    topic: str = typer.Argument(..., help="Presentation topic or pitch deck title"),
+    slides: int = typer.Option(7, "--slides", "-s", help="Number of slides"),
+    brand: Optional[str] = typer.Option(None, "--brand", "-b", help="Registered Brand Kit ID"),
+    output: Optional[Path] = typer.Option(None, "--output", "-o", help="Target output Markdown path")
+):
+    """Generates standard Marp/Slidev Markdown deck for developer presentations."""
+    with console.status(f"[bold green]Compiling {slides}-slide Marp deck...[/bold green]"):
+        _, md_path = client.presentations.generate_marp(
+            topic=topic,
+            output_md_path=str(output) if output else None,
+            slide_count=slides,
+            brand_id=brand
+        )
+    console.print(f"[bold green]Success![/bold green] Generated Marp Deck: [cyan]{md_path}[/cyan]")
+
+
 # -------------------------------------------------------------------------
 # Engine C: Image CLI Commands
 # -------------------------------------------------------------------------
@@ -242,6 +260,29 @@ def img_relight(
             shadow_intensity=intensity
         )
     console.print(f"[bold green]Success![/bold green] Generated studio product composite: [cyan]{res.file_path}[/cyan]")
+
+
+@img_app.command("isolate")
+def img_isolate(
+    image: Path = typer.Argument(..., help="Path to input image containing product/subject"),
+    output: Optional[Path] = typer.Option(None, "--output", "-o", help="Target output PNG path")
+):
+    """Removes background from product or portrait photo, producing a transparent PNG."""
+    with console.status("[bold green]Executing studio matting and alpha isolation...[/bold green]"):
+        out_p = client.images.isolate(str(image), output_path=str(output) if output else None)
+    console.print(f"[bold green]Success![/bold green] Isolated cutout: [cyan]{out_p}[/cyan]")
+
+
+@img_app.command("vectorize")
+def img_vectorize(
+    image: Path = typer.Argument(..., help="Path to input raster image or silhouette"),
+    color: str = typer.Option("#38bdf8", "--color", "-c", help="SVG fill color hex"),
+    output: Optional[Path] = typer.Option(None, "--output", "-o", help="Target output SVG path")
+):
+    """Converts raster image or icon into clean mathematical SVG bezier curves."""
+    with console.status("[bold green]Tracing contours and generating vector SVG...[/bold green]"):
+        out_p = client.images.vectorize(str(image), output_path=str(output) if output else None, color_hex=color)
+    console.print(f"[bold green]Success![/bold green] Vector SVG: [cyan]{out_p}[/cyan]")
 
 
 # -------------------------------------------------------------------------
@@ -335,6 +376,59 @@ def motion_ad(
     console.print(f"Duration: [yellow]{res.duration}s[/yellow] | Critic Score: [green]{res.critic_score}/100[/green]")
 
 
+@motion_app.command("jumpcut")
+def motion_jumpcut(
+    video: Path = typer.Argument(..., help="Path to talking-head video file"),
+    silence: float = typer.Option(0.35, "--silence", "-s", help="Silence threshold in seconds"),
+    scale: float = typer.Option(1.25, "--scale", help="Zoom punch-in scale factor"),
+    output: Optional[Path] = typer.Option(None, "--output", "-o", help="Target output MP4 path")
+):
+    """Surgically cuts dead air pauses and injects alternating camera punch-ins."""
+    with console.status("[bold green]Detecting speech boundaries and applying punch-ins...[/bold green]"):
+        out_p = client.motion.jumpcut(str(video), output_video_path=str(output) if output else None, silence_thresh_sec=silence, zoom_punch_scale=scale)
+    console.print(f"[bold green]Success![/bold green] Jump-cut video: [cyan]{out_p}[/cyan]")
+
+
+@motion_app.command("collage")
+def motion_collage(
+    clips: List[Path] = typer.Argument(..., help="2 to 4 video clip paths to assemble into a Bento mosaic"),
+    duration: float = typer.Option(4.0, "--duration", "-d", help="Target duration in seconds"),
+    output: Optional[Path] = typer.Option(None, "--output", "-o", help="Target output MP4 path")
+):
+    """Assembles multiple video feeds into an animated 9:16 Bento Box mosaic."""
+    with console.status("[bold green]Compiling synchronized Bento video mosaic...[/bold green]"):
+        out_p = client.motion.create_collage(clips=[str(c) for c in clips], output_video_path=str(output) if output else None, duration=duration)
+    console.print(f"[bold green]Success![/bold green] Bento mosaic video: [cyan]{out_p}[/cyan]")
+
+
+@motion_app.command("export-edl")
+def motion_export_edl(
+    project_ir: Path = typer.Argument(..., help="Path to project IR JSON file"),
+    output: Optional[Path] = typer.Option(None, "--output", "-o", help="Target output EDL file path")
+):
+    """Exports OpenGen IR timeline into CMX 3600 EDL for DaVinci Resolve."""
+    import json
+    with open(project_ir, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    out_p = str(output) if output else str(project_ir.with_suffix(".edl"))
+    edl_text = client.motion.export_edl(data, output_path=out_p)
+    console.print(f"[bold green]Success![/bold green] Exported CMX 3600 EDL: [cyan]{out_p}[/cyan]")
+
+
+@motion_app.command("export-fcpxml")
+def motion_export_fcpxml(
+    project_ir: Path = typer.Argument(..., help="Path to project IR JSON file"),
+    output: Optional[Path] = typer.Option(None, "--output", "-o", help="Target output FCPXML file path")
+):
+    """Exports OpenGen IR timeline into Apple FCPXML v1.9."""
+    import json
+    with open(project_ir, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    out_p = str(output) if output else str(project_ir.with_suffix(".fcpxml"))
+    xml_text = client.motion.export_fcpxml(data, output_path=out_p)
+    console.print(f"[bold green]Success![/bold green] Exported FCPXML: [cyan]{out_p}[/cyan]")
+
+
 @motion_app.command("audit")
 def motion_audit(
     footage: Path = typer.Argument(..., help="Path to source video footage to audit")
@@ -417,6 +511,59 @@ def motion_from_template(
         )
     console.print(f"[bold green]Success![/bold green] Generated Video Ad: [cyan]{res.file_path}[/cyan]")
     console.print(f"Duration: [yellow]{res.duration}s[/yellow] | Critic Score: [green]{res.critic_score}/100[/green]")
+
+
+@motion_app.command("jumpcut")
+def motion_jumpcut(
+    video: Path = typer.Argument(..., help="Path to talking-head video file"),
+    silence: float = typer.Option(0.35, "--silence", "-s", help="Silence threshold in seconds"),
+    scale: float = typer.Option(1.25, "--scale", help="Zoom punch-in scale factor"),
+    output: Optional[Path] = typer.Option(None, "--output", "-o", help="Target output MP4 path")
+):
+    """Surgically cuts dead air pauses and injects alternating camera punch-ins."""
+    with console.status("[bold green]Detecting speech boundaries and applying punch-ins...[/bold green]"):
+        out_p = client.motion.jumpcut(str(video), output_video_path=str(output) if output else None, silence_thresh_sec=silence, zoom_punch_scale=scale)
+    console.print(f"[bold green]Success![/bold green] Jump-cut video: [cyan]{out_p}[/cyan]")
+
+
+@motion_app.command("collage")
+def motion_collage(
+    clips: List[Path] = typer.Argument(..., help="2 to 4 video clip paths to assemble into a Bento mosaic"),
+    duration: float = typer.Option(4.0, "--duration", "-d", help="Target duration in seconds"),
+    output: Optional[Path] = typer.Option(None, "--output", "-o", help="Target output MP4 path")
+):
+    """Assembles multiple video feeds into an animated 9:16 Bento Box mosaic."""
+    with console.status("[bold green]Compiling synchronized Bento video mosaic...[/bold green]"):
+        out_p = client.motion.create_collage(clips=[str(c) for c in clips], output_video_path=str(output) if output else None, duration=duration)
+    console.print(f"[bold green]Success![/bold green] Bento mosaic video: [cyan]{out_p}[/cyan]")
+
+
+@motion_app.command("export-edl")
+def motion_export_edl(
+    project_ir: Path = typer.Argument(..., help="Path to project IR JSON file"),
+    output: Optional[Path] = typer.Option(None, "--output", "-o", help="Target output EDL file path")
+):
+    """Exports OpenGen IR timeline into CMX 3600 EDL for DaVinci Resolve."""
+    import json
+    with open(project_ir, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    out_p = str(output) if output else str(project_ir.with_suffix(".edl"))
+    edl_text = client.motion.export_edl(data, output_path=out_p)
+    console.print(f"[bold green]Success![/bold green] Exported CMX 3600 EDL: [cyan]{out_p}[/cyan]")
+
+
+@motion_app.command("export-fcpxml")
+def motion_export_fcpxml(
+    project_ir: Path = typer.Argument(..., help="Path to project IR JSON file"),
+    output: Optional[Path] = typer.Option(None, "--output", "-o", help="Target output FCPXML file path")
+):
+    """Exports OpenGen IR timeline into Apple FCPXML v1.9."""
+    import json
+    with open(project_ir, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    out_p = str(output) if output else str(project_ir.with_suffix(".fcpxml"))
+    xml_text = client.motion.export_fcpxml(data, output_path=out_p)
+    console.print(f"[bold green]Success![/bold green] Exported FCPXML: [cyan]{out_p}[/cyan]")
 
 
 # -------------------------------------------------------------------------

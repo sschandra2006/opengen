@@ -6,7 +6,10 @@ into a 100% editable Microsoft Word (.docx) document.
 import logging
 from pathlib import Path
 from typing import Dict, Any, List, Optional
-import fitz
+try:
+    import pymupdf as fitz
+except ImportError:
+    import fitz
 import docx
 from docx.shared import Inches, Pt, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH

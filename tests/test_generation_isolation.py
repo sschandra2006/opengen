@@ -55,22 +55,28 @@ def test_client_credentials_do_not_leak_to_env_or_other_clients():
 
 
 def test_image_cache_parameter_separation_and_output_resilience():
-    # Hash must distinguish transparency and output format
+    # Hash must distinguish transparency, output format, and seeds
     h_opaque = ImageCache.compute_hash("Clean cube", "1:1", "minimal", "flux", "png", False)
     h_trans = ImageCache.compute_hash("Clean cube", "1:1", "minimal", "flux", "png", True)
     h_svg = ImageCache.compute_hash("Clean cube", "1:1", "minimal", "flux", "svg", False)
-    assert len({h_opaque, h_trans, h_svg}) == 3
+    h_seed1 = ImageCache.compute_hash("Clean cube", "1:1", "minimal", "flux", "png", False, seed=42)
+    h_seed2 = ImageCache.compute_hash("Clean cube", "1:1", "minimal", "flux", "png", False, seed=99)
+    assert len({h_opaque, h_trans, h_svg, h_seed1, h_seed2}) == 5
 
     client = OpenGenClient()
-    img1 = client.images.generate(prompt="Test Vector Cube", style="vector", output_format="svg")
+    img1 = client.images.generate(prompt="Test Vector Cube", style="vector", output_format="svg", seed=10)
     path1 = Path(img1.file_path)
     assert path1.exists()
 
-    # Delete output file of run 1 — cache store must survive independently and regenerate run 2 cleanly
+    # Different seed should generate a distinct file path and not return cached seed 10
+    img_diff_seed = client.images.generate(prompt="Test Vector Cube", style="vector", output_format="svg", seed=20)
+    assert img_diff_seed.file_path != img1.file_path
+
+    # Delete output file of run 1 — cache store must survive independently and regenerate cleanly
     path1.unlink()
     assert not path1.exists()
 
-    img2 = client.images.generate(prompt="Test Vector Cube", style="vector", output_format="svg")
+    img2 = client.images.generate(prompt="Test Vector Cube", style="vector", output_format="svg", seed=10)
     path2 = Path(img2.file_path)
     assert path2.exists()
     assert path2.parent != path1.parent

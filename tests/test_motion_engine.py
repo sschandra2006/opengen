@@ -203,3 +203,81 @@ def test_rest_api_motion_endpoints():
     assert data["status"] == "completed"
     assert Path(data["file_path"]).exists()
     assert data["critic_score"] >= 80
+
+
+def test_sound_designer_defaults_to_central_sfx_dir():
+    from opengen.config import settings
+    sd = SoundDesigner()
+    assert sd.sfx_dir == str(settings.SFX_DIR)
+    assert Path(sd.sfx_dir).is_absolute()
+    assert Path(sd.sfx_dir) == settings.SFX_DIR
+
+
+def test_motion_engine_generate_ad_from_folder(tmp_path):
+    content_dir = tmp_path / "sangam_ad_footage"
+    content_dir.mkdir()
+
+    vid1 = content_dir / "clip_01.mp4"
+    vid2 = content_dir / "clip_02.mp4"
+    import subprocess
+    for v in [vid1, vid2]:
+        cmd = [
+            "ffmpeg", "-y",
+            "-f", "lavfi", "-i", "testsrc=duration=1:size=640x360:rate=30",
+            "-c:v", "libx264", "-pix_fmt", "yuv420p",
+            str(v)
+        ]
+        try:
+            subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
+        except Exception:
+            v.touch()
+
+    photo = content_dir / "product_photo.jpg"
+    photo.write_bytes(b"\xFF\xD8\xFF\xE0" + b"\x00" * 100)
+
+    engine = MotionEngine()
+    out_mp4 = str(tmp_path / "folder_output.mp4")
+    res = engine.generate_ad_from_folder(
+        folder_path=content_dir,
+        output_mp4_path=out_mp4,
+        brief="Commercial ad for Sangam Dairy Milk",
+        duration=10.0,
+        aspect_ratio="9:16"
+    )
+
+    assert Path(res["file_path"]).exists()
+    assert res["media_scanned"] == 3
+    assert res["video_files_count"] == 2
+    assert res["image_files_count"] == 1
+    assert res["critic_score"] >= 80
+
+
+def test_sdk_client_motion_generate_from_folder(tmp_path):
+    content_dir = tmp_path / "brand_assets"
+    content_dir.mkdir()
+    vid = content_dir / "showcase.mp4"
+    import subprocess
+    cmd = [
+        "ffmpeg", "-y",
+        "-f", "lavfi", "-i", "testsrc=duration=1:size=640x360:rate=30",
+        "-c:v", "libx264", "-pix_fmt", "yuv420p",
+        str(vid)
+    ]
+    try:
+        subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
+    except Exception:
+        vid.touch()
+
+    client = OpenGenClient()
+    result = client.motion.generate_from_folder(
+        folder_path=content_dir,
+        brief="Brand launch ad",
+        duration=12.0
+    )
+
+    assert Path(result.file_path).exists()
+    assert result.media_scanned == 1
+    assert result.job_id is not None
+    p = Path(result.file_path)
+    assert "output" in p.parts and "motion" in p.parts
+    assert (p.parent / "metadata.json").exists()

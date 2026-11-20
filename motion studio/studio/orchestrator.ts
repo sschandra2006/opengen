@@ -52,6 +52,7 @@ Options:
   --duration <sec>           Duration in seconds (default: 16.7, max 29.5)
   --fps <number>             Frames per second (default: 30)
   --out <path>               Output MP4 file path
+  --run-dir <path>           Isolated job run directory for all WIP files
 `);
 }
 
@@ -176,7 +177,9 @@ async function handleRenderAd() {
   const provider = getOpt('provider', 'offline');
   const duration = parseFloat(getOpt('duration', '16.7'));
   const title = getOpt('title', 'opengen_performance_ad');
-  const outPath = getOpt('out', path.join(FINAL_DIR, `${title}.mp4`));
+  const runDirOpt = getOpt('run-dir', '');
+  const outPath = getOpt('out', runDirOpt ? path.join(runDirOpt, `${title}.mp4`) : path.join(FINAL_DIR, `${title}.mp4`));
+  const runDir = runDirOpt || path.dirname(outPath);
 
   console.log(`\n=============================================================================`);
   console.log(`   OPENGEN ENGINE 5: DIRECT-RESPONSE PERFORMANCE AD PIPELINE`);
@@ -202,7 +205,7 @@ async function handleRenderAd() {
   }
 
   console.log(`\n[Step 3/3] Deterministic Renderer: Compiling HTML5/GSAP with MicroEditor & Rendering...`);
-  const renderedMp4 = await adapter.render(project, { outputPath: outPath, fps: 30 });
+  const renderedMp4 = await adapter.render(project, { outputPath: outPath, runDir, fps: 30 });
 
   if (existsSync(renderedMp4)) {
     console.log(`\n=============================================================================`);

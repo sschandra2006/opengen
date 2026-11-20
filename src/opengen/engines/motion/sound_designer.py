@@ -9,6 +9,8 @@ import subprocess
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 
+from opengen.config import settings
+
 
 class SoundDesigner:
     """
@@ -20,7 +22,7 @@ class SoundDesigner:
     """
 
     def __init__(self, sfx_library_dir: Optional[str] = None):
-        self.sfx_dir = sfx_library_dir or "assets/sfx"
+        self.sfx_dir = sfx_library_dir or str(settings.SFX_DIR)
         os.makedirs(self.sfx_dir, exist_ok=True)
 
     def extract_sfx_cues_from_project(self, project_ir: Dict[str, Any]) -> List[Dict[str, Any]]:

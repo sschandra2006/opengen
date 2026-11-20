@@ -394,6 +394,85 @@ def tool_creative_critic_audit(
         return {"status": "error", "message": str(e)}
 
 
+def tool_jumpcut_video(
+    input_video_path: str,
+    silence_thresh_sec: float = 0.35
+) -> Dict[str, Any]:
+    """Surgically cuts dead air (>0.35s) and adds dynamic camera punch-ins."""
+    try:
+        out_p = client.motion.jumpcut(input_video_path, silence_thresh_sec=silence_thresh_sec)
+        return {"status": "completed", "output_path": out_p}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+def tool_create_bento_mosaic(
+    clip_paths: List[str],
+    duration: float = 4.0
+) -> Dict[str, Any]:
+    """Assembles 2 to 4 video clips into an animated 9:16 Bento Box mosaic."""
+    try:
+        out_p = client.motion.create_collage(clips=clip_paths, duration=duration)
+        return {"status": "completed", "output_path": out_p}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+def tool_isolate_product_image(image_path: str) -> Dict[str, Any]:
+    """Removes background from product or subject image, returning transparent RGBA PNG."""
+    try:
+        out_p = client.images.isolate(image_path)
+        return {"status": "completed", "output_path": out_p}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+def tool_vectorize_image_to_svg(image_path: str, color_hex: str = "#38bdf8") -> Dict[str, Any]:
+    """Converts raster image or silhouette into clean mathematical SVG paths."""
+    try:
+        out_p = client.images.vectorize(image_path, color_hex=color_hex)
+        return {"status": "completed", "svg_path": out_p}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+def tool_export_nle_edl(project_ir_json: str) -> Dict[str, Any]:
+    """Exports an OpenGen IR timeline into CMX 3600 EDL for DaVinci Resolve."""
+    try:
+        data = json.loads(project_ir_json) if isinstance(project_ir_json, str) else project_ir_json
+        edl_text = client.motion.export_edl(data)
+        return {"status": "completed", "edl_content": edl_text}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+def tool_export_nle_fcpxml(project_ir_json: str) -> Dict[str, Any]:
+    """Exports an OpenGen IR timeline into Apple FCPXML v1.9."""
+    try:
+        data = json.loads(project_ir_json) if isinstance(project_ir_json, str) else project_ir_json
+        xml_text = client.motion.export_fcpxml(data)
+        return {"status": "completed", "fcpxml_content": xml_text}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+def tool_generate_marp_presentation(
+    topic: str,
+    slide_count: int = 7,
+    brand_id: str = ""
+) -> Dict[str, Any]:
+    """Generates standard Marp/Slidev Markdown deck for developer presentations."""
+    try:
+        _, md_path = client.presentations.generate_marp(
+            topic=topic,
+            slide_count=slide_count,
+            brand_id=brand_id or None
+        )
+        return {"status": "completed", "markdown_path": md_path}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
 # -------------------------------------------------------------------------
 # Tool Registry Map
 # -------------------------------------------------------------------------
@@ -418,6 +497,13 @@ MCP_TOOLS = {
     "reframe_video": tool_reframe_video,
     "compile_catalog_typst": tool_compile_catalog_typst,
     "creative_critic_audit": tool_creative_critic_audit,
+    "jumpcut_video": tool_jumpcut_video,
+    "create_bento_mosaic": tool_create_bento_mosaic,
+    "isolate_product_image": tool_isolate_product_image,
+    "vectorize_image_to_svg": tool_vectorize_image_to_svg,
+    "export_nle_edl": tool_export_nle_edl,
+    "export_nle_fcpxml": tool_export_nle_fcpxml,
+    "generate_marp_presentation": tool_generate_marp_presentation,
 }
 
 
