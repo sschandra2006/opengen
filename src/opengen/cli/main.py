@@ -29,6 +29,7 @@ motion_app = typer.Typer(help="Engine E: Motion Graphics & Performance Video Ads
 brand_app = typer.Typer(help="Cross-Studio Brand Kits and Design Tokens.", no_args_is_help=True)
 critic_app = typer.Typer(help="Autonomous Creative Critic Gate across all 5 studios.", no_args_is_help=True)
 config_app = typer.Typer(help="Configuration and provider diagnostics.", no_args_is_help=True)
+hardware_app = typer.Typer(help="Adaptive hardware compute inspection & tier governance.", no_args_is_help=True)
 
 app.add_typer(doc_app, name="document")
 app.add_typer(pres_app, name="presentation")
@@ -38,6 +39,7 @@ app.add_typer(motion_app, name="motion")
 app.add_typer(brand_app, name="brand")
 app.add_typer(critic_app, name="critic")
 app.add_typer(config_app, name="config")
+app.add_typer(hardware_app, name="hardware")
 
 
 # -------------------------------------------------------------------------
@@ -623,6 +625,56 @@ def config_check():
     table.add_row("OpenAI API Key", "OK" if settings.OPENAI_API_KEY else "OFF", openai_key)
     table.add_row("Gemini API Key", "OK" if settings.GEMINI_API_KEY else "OFF", gemini_key)
     table.add_row("Together API Key", "OK" if settings.TOGETHER_API_KEY else "OFF", together_key)
+
+    console.print(table)
+
+
+# -------------------------------------------------------------------------
+# Hardware & Adaptive Governor Commands
+# -------------------------------------------------------------------------
+
+@hardware_app.command("profile")
+def hardware_profile():
+    """Inspects and displays host laptop specs, memory headroom, GPU VRAM, and assigned tier."""
+    prof = client.hardware.get_profile()
+    table = Table(title="OpenGen Host Laptop Hardware Profile")
+    table.add_column("Property", style="cyan", no_wrap=True)
+    table.add_column("Value", style="bold white")
+
+    table.add_row("Assigned Tier", f"[bold green]{prof['assigned_tier']}[/bold green]")
+    table.add_row("System RAM", f"{prof['total_ram_gb']} GB total ({prof['available_ram_gb']} GB available, {prof['used_ram_pct']}% used)")
+    table.add_row("CPU Cores", f"{prof['cpu_count_physical']} physical / {prof['cpu_count_logical']} logical threads")
+    table.add_row("Accelerator", str(prof['accelerator']))
+    table.add_row("GPU Device", prof['gpu_name'] or "None (CPU Execution)")
+    table.add_row("GPU VRAM", f"{prof['total_vram_gb']} GB total ({prof['free_vram_gb']} GB free)")
+    table.add_row("Hardware NVENC", "[green]Available[/green]" if prof['has_nvenc'] else "[yellow]Not Available (libx264)[/yellow]")
+    table.add_row("Battery Power", "[yellow]Battery Active[/yellow]" if prof['is_battery_powered'] else "[green]AC Plugged In[/green]")
+
+    console.print(table)
+
+
+@hardware_app.command("policy")
+def hardware_policy():
+    """Displays the active adaptive execution limits and memory thresholds for this laptop."""
+    policy = client.hardware.get_policy()
+    table = Table(title=f"Adaptive Execution Policy ({policy['tier']})")
+    table.add_column("Subsystem / Setting", style="cyan", no_wrap=True)
+    table.add_column("Clamped Limit / Value", style="bold yellow")
+
+    table.add_row("Max LLM Context Window", f"{policy['max_llm_context']} tokens")
+    table.add_row("Max Output Tokens per Turn", f"{policy['max_output_tokens']} tokens (KV-cache safe)")
+    table.add_row("Allow Local LLM", "Yes" if policy['allow_local_llm'] else "No (Cloud recommended)")
+    table.add_row("Recommended Local Model", policy['recommended_local_model'])
+    table.add_row("Recommended Remote Model", policy['recommended_remote_model'])
+    table.add_row("Image Latent Max Resolution", f"{policy['image_max_resolution']}x{policy['image_max_resolution']} px")
+    table.add_row("Diffusers CPU Offload", "Enabled" if policy['image_enable_cpu_offload'] else "Disabled")
+    table.add_row("Diffusers VAE Tiling", "Enabled" if policy['image_enable_vae_tiling'] else "Disabled")
+    table.add_row("rembg Execution Provider", policy['rembg_provider'])
+    table.add_row("Video Ad Render Resolution", policy['video_resolution'])
+    table.add_row("Video Target Framerate", f"{policy['video_target_fps']} fps")
+    table.add_row("FFmpeg Video Encoder", policy['ffmpeg_codec'])
+    table.add_row("Document SKU Chunk Size", f"{policy['doc_chunk_size']} items per turn")
+    table.add_row("Preferred Doc Extractor", policy['preferred_doc_extractor'])
 
     console.print(table)
 

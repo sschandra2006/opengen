@@ -1102,6 +1102,28 @@ class CriticClient:
         return CreativeCriticGate.audit_any(engine=engine, payload=payload)
 
 
+class HardwareClient:
+    """Provides hardware inspection, tier classification, and adaptive execution policy telemetry."""
+
+    def __init__(self, parent: "OpenGenClient"):
+        self.parent = parent
+
+    def get_profile(self) -> Dict[str, Any]:
+        """Returns the current host hardware profile (RAM, VRAM, GPU, Cores, Battery, Tier)."""
+        from opengen.hardware.governor import hardware_governor
+        return hardware_governor.profile.model_dump()
+
+    def get_policy(self) -> Dict[str, Any]:
+        """Returns the adaptive execution policy limits calculated for this laptop."""
+        from opengen.hardware.governor import hardware_governor
+        return hardware_governor.policy.model_dump()
+
+    def refresh(self):
+        """Forces a fresh hardware audit."""
+        from opengen.hardware.governor import hardware_governor
+        hardware_governor.refresh()
+
+
 class OpenGenClient:
     """
     Main entry point for the OpenGen Python SDK.
@@ -1127,6 +1149,7 @@ class OpenGenClient:
         self.jobs = JobsClient(self)
         self.brand_kits = BrandKitsClient(self)
         self.critic = CriticClient(self)
+        self.hardware = HardwareClient(self)
 
     def _make_provider_manager(self, job_tracker: CostTracker) -> ProviderManager:
         """Creates an isolated ProviderManager scoped to a single job."""

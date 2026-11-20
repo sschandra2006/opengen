@@ -64,6 +64,11 @@ class Settings(BaseSettings):
     MAX_VALIDATION_ATTEMPTS: int = 3
     DEFAULT_CONFIDENCE_THRESHOLD: float = 0.70
 
+    # Adaptive Hardware Governor Settings
+    ENABLE_HARDWARE_ADAPTATION: bool = True
+    HARDWARE_TIER: Optional[str] = os.environ.get("OPENGEN_HARDWARE_TIER")
+    MAX_RAM_THRESHOLD_PCT: float = 88.0
+
     def ensure_directories(self):
         """Idempotently creates necessary working directories."""
         for path in [self.DATA_DIR, self.CACHE_DIR, self.UPLOAD_DIR, self.OUTPUT_DIR, self.SFX_DIR]:

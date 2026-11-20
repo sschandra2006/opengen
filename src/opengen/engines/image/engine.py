@@ -21,6 +21,7 @@ from opengen.engines.image.vectorizer import RasterVectorizer
 from opengen.engines.image.providers.together_flux import TogetherFluxAdapter
 from opengen.engines.image.providers.openai_dalle import OpenAIDalleAdapter
 from opengen.engines.image.providers.recraft_vector import RecraftVectorAdapter
+from opengen.hardware.governor import hardware_governor
 
 logger = logging.getLogger(__name__)
 
@@ -98,25 +99,26 @@ class ImageEngine:
                 is_vector=is_vec
             )
 
-        # 2. Route to provider
-        if target_provider == "recraft" or request.output_format == "svg":
-            raw_bytes, mime, cost = self.recraft_adapter.generate(request)
-            ext = ".svg"
-            is_vec = True
-        elif target_provider == "dalle":
-            raw_bytes, mime, cost = self.dalle_adapter.generate(request)
-            ext = ".png"
-            is_vec = False
-        else:
-            try:
-                raw_bytes, mime, cost = self.flux_adapter.generate(request)
-                ext = ".png"
-                is_vec = False
-            except Exception:
-                logger.info("Falling back to mock SVG generation for local testing...")
+        # 2. Route to provider with MemoryGuard protection
+        with hardware_governor.guard("image_generation"):
+            if target_provider == "recraft" or request.output_format == "svg":
                 raw_bytes, mime, cost = self.recraft_adapter.generate(request)
                 ext = ".svg"
                 is_vec = True
+            elif target_provider == "dalle":
+                raw_bytes, mime, cost = self.dalle_adapter.generate(request)
+                ext = ".png"
+                is_vec = False
+            else:
+                try:
+                    raw_bytes, mime, cost = self.flux_adapter.generate(request)
+                    ext = ".png"
+                    is_vec = False
+                except Exception:
+                    logger.info("Falling back to mock SVG generation for local testing...")
+                    raw_bytes, mime, cost = self.recraft_adapter.generate(request)
+                    ext = ".svg"
+                    is_vec = True
 
         # 3. Post-Process via Compositor
         processed_bytes = ImageCompositor.process_image(raw_bytes, mime, request.transparent_background)

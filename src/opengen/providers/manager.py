@@ -14,6 +14,8 @@ from opengen.config import settings
 from opengen.domain.errors import ProviderError
 from opengen.domain.provider import TokenCostReport
 from opengen.providers.registry import MODEL_REGISTRY
+from opengen.hardware.governor import hardware_governor
+from opengen.hardware.memory_guard import MemoryGuard
 
 logger = logging.getLogger(__name__)
 T = TypeVar("T", bound=BaseModel)
@@ -85,10 +87,12 @@ class ProviderManager:
         model: Optional[str] = None,
         api_key: Optional[str] = None,
         fallbacks: Optional[List[str]] = None,
-        temperature: float = 0.1
+        temperature: float = 0.1,
+        max_output_tokens: Optional[int] = None
     ) -> Tuple[T, TokenCostReport]:
         """
         Executes structured generation using LiteLLM with 1-turn reflection self-healing and fallback cascade.
+        Enforces adaptive hardware token budgeting and proactive memory guarding.
         """
         target_model = model or self.default_model
         effective_key = api_key or self.api_key
@@ -104,7 +108,8 @@ class ProviderManager:
                     system_prompt=system_prompt,
                     response_model=response_model,
                     api_key=effective_key,
-                    temperature=temperature
+                    temperature=temperature,
+                    max_output_tokens=max_output_tokens
                 )
                 if self.cost_tracker is not None:
                     self.cost_tracker.add_report(cost_report)
@@ -122,7 +127,8 @@ class ProviderManager:
         system_prompt: str,
         response_model: Type[T],
         api_key: Optional[str],
-        temperature: float
+        temperature: float,
+        max_output_tokens: Optional[int] = None
     ) -> Tuple[T, TokenCostReport]:
         import litellm
         litellm.drop_params = True
@@ -139,6 +145,13 @@ class ProviderManager:
             "temperature": temperature,
             "timeout": 90
         }
+
+        # Apply adaptive hardware token budgeting
+        if settings.ENABLE_HARDWARE_ADAPTATION:
+            _, safe_max = hardware_governor.get_token_budget(requested_max_tokens=max_output_tokens)
+            kwargs["max_tokens"] = safe_max
+        elif max_output_tokens:
+            kwargs["max_tokens"] = max_output_tokens
 
         # Resolve API keys & base URLs across providers
         if api_key:
@@ -162,8 +175,9 @@ class ProviderManager:
         elif "local" in model:
             kwargs["api_base"] = settings.LOCAL_LLM_BASE_URL
 
-        # Request completion
-        response = litellm.completion(**kwargs)
+        # Request completion protected by MemoryGuard
+        with hardware_governor.guard(operation_name=f"llm_{model}"):
+            response = litellm.completion(**kwargs)
         raw_text = response.choices[0].message.content or "{}"
 
         # Clean extraction

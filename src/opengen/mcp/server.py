@@ -473,11 +473,25 @@ def tool_generate_marp_presentation(
         return {"status": "error", "message": str(e)}
 
 
+def tool_get_hardware_profile() -> Dict[str, Any]:
+    """Inspects the host machine specifications, memory headroom, GPU VRAM, and active execution tier."""
+    try:
+        from opengen.hardware.governor import hardware_governor
+        return {
+            "status": "completed",
+            "profile": hardware_governor.profile.model_dump(),
+            "policy": hardware_governor.policy.model_dump()
+        }
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
 # -------------------------------------------------------------------------
 # Tool Registry Map
 # -------------------------------------------------------------------------
 
 MCP_TOOLS = {
+    "get_hardware_profile": tool_get_hardware_profile,
     "create_document": tool_create_document,
     "template_to_document": tool_template_to_document,
     "analyze_reference": tool_analyze_reference,
