@@ -53,6 +53,10 @@ class ImageEngine:
                     brand=brand
                 )
 
+        # Inject standard anti-slop negative constraints if not provided
+        if not request.negative_prompt:
+            request.negative_prompt = OpticalPromptDirector.get_negative_prompt(request.style)
+
         if output_dir is not None:
             out_dir = Path(output_dir)
             out_dir.mkdir(parents=True, exist_ok=True)

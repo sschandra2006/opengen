@@ -74,12 +74,44 @@ class AIRouter:
             return {}
 
     def call_gemini(self, prompt: str, system_prompt: str = "", stage: str = "general") -> Dict[str, Any]:
+        """Legacy method for cloud generation. Redirects to call_cloud."""
+        return self.call_cloud(prompt, system_prompt, stage=stage)
+
+    def call_cloud(self, prompt: str, system_prompt: str = "", stage: str = "general") -> Dict[str, Any]:
         """
-        Calls Google Gemini Flash API for complex semantic reasoning with structured JSON response.
-        Falls back to local Ollama if unavailable or key missing.
+        Universal cloud LLM inference gateway across OpenAI, Anthropic, DeepSeek, Gemini, and OpenRouter.
+        Falls back to local Ollama if cloud is unavailable or keys missing.
         """
+        # Try universal LiteLLM first
+        try:
+            import litellm
+            from opengen.config import resolve_default_model
+            model = resolve_default_model()
+            if not model.startswith("ollama/"):
+                messages = []
+                if system_prompt:
+                    messages.append({"role": "system", "content": system_prompt + "\nRespond strictly in valid JSON."})
+                messages.append({"role": "user", "content": prompt})
+
+                resp = litellm.completion(
+                    model=model,
+                    messages=messages,
+                    temperature=0.1
+                )
+                raw_text = resp.choices[0].message.content or "{}"
+                in_tok = getattr(resp.usage, "prompt_tokens", len(prompt.split()) * 2)
+                out_tok = getattr(resp.usage, "completion_tokens", len(raw_text.split()) * 2)
+                self.tracker.record_gemini(stage, in_tok, out_tok)
+                try:
+                    return json.loads(raw_text)
+                except Exception:
+                    return json_repair.loads(raw_text)
+        except Exception as ex:
+            logger.debug(f"LiteLLM call in AIRouter skipped or failed: {ex}")
+
+        # Fallback to direct Gemini SDK if configured
         if not self.gemini_client:
-            logger.info("Gemini API key not configured. Routing call to local Qwen3:8B.")
+            logger.info("No cloud API keys configured. Routing call to local Qwen3:8B.")
             return self.call_ollama(prompt, system_prompt)
 
         full_prompt = f"{system_prompt}\n\nTask:\n{prompt}\n\nRespond strictly with valid JSON."
@@ -104,16 +136,16 @@ class AIRouter:
             except Exception:
                 return json_repair.loads(raw_text)
         except Exception as e:
-            logger.warning(f"Gemini API call failed ({e}). Falling back to local Qwen3:8B.")
+            logger.warning(f"Cloud API call failed ({e}). Falling back to local Qwen3:8B.")
             return self.call_ollama(prompt, system_prompt)
 
     def route_task(self, task_type: str, prompt: str, system_prompt: str = "") -> Dict[str, Any]:
         """
         Smart routing according to Module 8:
         - basic classification / simple extraction -> Qwen3:8B (Local)
-        - complex semantic reasoning / conflict resolution -> Gemini Flash
+        - complex semantic reasoning / conflict resolution -> Cloud Models (Gemini, Claude, GPT, DeepSeek)
         """
         if task_type in ["classification", "preliminary_extraction", "basic_mapping", "summarization"]:
             return self.call_ollama(prompt, system_prompt)
         else:
-            return self.call_gemini(prompt, system_prompt, stage=task_type)
+            return self.call_cloud(prompt, system_prompt, stage=task_type)

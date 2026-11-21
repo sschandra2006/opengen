@@ -9,6 +9,39 @@ import re
 from typing import List, Dict, Any, Tuple
 
 
+class StyleRedliner:
+    """Enforces Tier 1 negative style constraints across generated document text."""
+
+    BANNED_BUZZWORDS = [
+        r"\bdelve\b",
+        r"\btestament to\b",
+        r"\bbeacon\b",
+        r"\bunleash(?:ing|ed|es)?\b",
+        r"\btapestry\b",
+        r"\bgame-?changer\b",
+        r"\bplethora\b",
+        r"\bsynerg(?:y|ies|istic)\b",
+        r"\btransformative\b",
+        r"\bgroundbreaking\b",
+        r"\bunlocking\b",
+        r"\bpinnacle\b",
+    ]
+
+    BUZZWORD_PATTERN = re.compile("|".join(BANNED_BUZZWORDS), flags=re.IGNORECASE)
+
+    @classmethod
+    def audit_text(cls, text: str) -> List[str]:
+        """Detects banned buzzwords in text."""
+        return cls.BUZZWORD_PATTERN.findall(text)
+
+    @classmethod
+    def redline_text(cls, text: str, replacement: str = "") -> str:
+        """Removes or cleanses banned buzzwords and emojis from text."""
+        clean = SemanticSKUClassifier.EMOJI_PATTERN.sub("", text)
+        clean = cls.BUZZWORD_PATTERN.sub(replacement, clean)
+        return " ".join(clean.split())
+
+
 class SemanticSKUClassifier:
     """Classifies catalog SKUs into merchandising tiers and sanitizes iconography."""
 
@@ -40,9 +73,8 @@ class SemanticSKUClassifier:
 
     @classmethod
     def sanitize_title(cls, text: str) -> str:
-        """Strips mobile OS emojis and cleans extraneous whitespace."""
-        clean = cls.EMOJI_PATTERN.sub("", text)
-        return " ".join(clean.split())
+        """Strips mobile OS emojis, banned buzzwords, and cleans extraneous whitespace."""
+        return StyleRedliner.redline_text(text)
 
     @classmethod
     def resolve_vector_icon(cls, category_name: str) -> str:

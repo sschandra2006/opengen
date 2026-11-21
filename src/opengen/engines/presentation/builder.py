@@ -93,6 +93,9 @@ class PresentationBuilder:
         if spec.bento_cards:
             spans = [c.col_span for c in spec.bento_cards]
             geometries = CoordinateLayoutSolver.solve_12col_bento_geometry(spans)
+            is_comparison = (spec.layout_type == "comparison_matrix" and len(spec.bento_cards) >= 2)
+            is_timeline = (spec.layout_type == "roadmap_timeline")
+
             for idx, b_card in enumerate(spec.bento_cards):
                 if idx >= len(geometries):
                     break
@@ -105,9 +108,17 @@ class PresentationBuilder:
                 )
                 shape.fill.solid()
                 shape.fill.fore_color.rgb = _hex_to_rgb(theme.card_background)
-                border_color = b_card.accent_color or theme.accent_color
+
+                # Determine border and accent styling by semantic component
+                if is_comparison:
+                    border_color = "#EF4444" if idx == 0 else (b_card.accent_color or theme.accent_color)
+                elif is_timeline:
+                    border_color = b_card.accent_color or theme.accent_color
+                else:
+                    border_color = b_card.accent_color or theme.accent_color
+
                 shape.line.color.rgb = _hex_to_rgb(border_color)
-                shape.line.width = Pt(1.5)
+                shape.line.width = Pt(2.0 if (is_comparison or is_timeline) else 1.5)
 
                 ctf = shape.text_frame
                 ctf.word_wrap = True
@@ -116,13 +127,30 @@ class PresentationBuilder:
                 ctf.margin_right = Inches(0.25)
                 ctf.margin_bottom = Inches(0.25)
 
-                # Giant Metric if present
                 first_p = True
+
+                # Comparison Badge or Timeline Step Indicator
+                if is_comparison:
+                    badge_p = ctf.paragraphs[0]
+                    first_p = False
+                    badge_p.text = "THE LEGACY WAY" if idx == 0 else "THE MODERN WAY"
+                    badge_p.font.size = Pt(10)
+                    badge_p.font.bold = True
+                    badge_p.font.color.rgb = _hex_to_rgb(border_color)
+                elif is_timeline:
+                    step_p = ctf.paragraphs[0]
+                    first_p = False
+                    step_p.text = f"STEP 0{idx + 1}"
+                    step_p.font.size = Pt(11)
+                    step_p.font.bold = True
+                    step_p.font.color.rgb = _hex_to_rgb(border_color)
+
+                # Giant Metric / Big Stat Hero if present
                 if b_card.value:
-                    mp = ctf.paragraphs[0]
+                    mp = ctf.paragraphs[0] if first_p else ctf.add_paragraph()
                     first_p = False
                     mp.text = b_card.value
-                    mp.font.size = Pt(40)
+                    mp.font.size = Pt(52)
                     mp.font.bold = True
                     mp.font.name = theme.font_header
                     mp.font.color.rgb = _hex_to_rgb(border_color)
@@ -136,7 +164,7 @@ class PresentationBuilder:
                 tp.font.name = theme.font_header
                 tp.font.color.rgb = _hex_to_rgb(theme.primary_color)
 
-                # Description
+                # Description / Takeaway
                 if b_card.description:
                     dp = ctf.add_paragraph()
                     dp.text = b_card.description
@@ -203,10 +231,10 @@ class PresentationBuilder:
                     lp.font.size = Pt(13)
                     lp.font.color.rgb = _hex_to_rgb(theme.text_color)
 
-                # Body Bullets
+                # Clean Takeaway Paragraphs (banning raw bullet characters)
                 for b_idx, bullet in enumerate(card.body_bullets):
                     bp = ctf.add_paragraph() if (card.title or card.metric or b_idx > 0) else ctf.paragraphs[0]
-                    bp.text = f"•  {bullet}"
+                    bp.text = bullet
                     bp.font.size = Pt(geo.recommended_font_pt)
                     bp.font.name = theme.font_body
                     bp.font.color.rgb = _hex_to_rgb(theme.text_color)

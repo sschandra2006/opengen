@@ -28,14 +28,16 @@ class PresentationEngine:
         output_pptx_path: str,
         slide_count: int = 8,
         theme_name: str = "modern_corporate",
-        source_materials: Optional[str] = None
+        source_materials: Optional[str] = None,
+        subgraph_context: Optional[str] = None
     ) -> PresentationDeckSpec:
         """Plans and builds a 100% native editable PowerPoint presentation."""
         deck_spec = self.planner.plan_deck(
             topic=topic,
             slide_count=slide_count,
             theme_name=theme_name,
-            source_materials=source_materials
+            source_materials=source_materials,
+            subgraph_context=subgraph_context
         )
 
         PresentationBuilder.build_deck(
@@ -53,7 +55,8 @@ class PresentationEngine:
         slide_count: int = 7,
         theme_name: str = "modern_corporate",
         brand: Optional[BrandKitSpec] = None,
-        source_materials: Optional[str] = None
+        source_materials: Optional[str] = None,
+        subgraph_context: Optional[str] = None
     ) -> Tuple[PresentationDeckSpec, str, str]:
         """
         Plans and compiles an elite Bento Grid presentation following Sequoia/YC narrative arcs.
@@ -64,7 +67,8 @@ class PresentationEngine:
             slide_count=slide_count,
             theme_name=brand.brandId if brand else theme_name,
             source_materials=source_materials,
-            use_bento=True
+            use_bento=True,
+            subgraph_context=subgraph_context
         )
 
         # 1. Build Native PowerPoint

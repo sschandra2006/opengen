@@ -53,24 +53,30 @@ class StudioShadowSynthesizer:
             gray = ImageOps.grayscale(product)
             alpha = gray.point(lambda p: 0 if p > 240 else 255)
 
-        # 2. Hard Contact Shadow (anchors product to surface, preventing "floating")
-        # sigma_0 = 2px, high opacity (0.85), small vertical offset (3px)
-        contact_mask = alpha.filter(ImageFilter.GaussianBlur(radius=2))
+        # 2. Hard Ambient Occlusion (AO) Contact Shadow (anchors product to surface, preventing "floating")
+        # sigma_0 = 2px, high opacity (0.85-0.90), tight vertical anchor (3px)
+        contact_sigma = max(1.5, float(scale_product * 2.0))
+        contact_mask = alpha.filter(ImageFilter.GaussianBlur(radius=contact_sigma))
         contact_shadow = Image.new(
             "RGBA", product.size,
-            (0, 0, 0, int(255 * shadow_intensity * 0.85))
+            (0, 0, 0, int(255 * min(0.95, shadow_intensity * 0.90)))
         )
 
-        # 3. Soft Directional Cast Shadow
-        # sigma expands (16px), offset along dominant light vector (light_angle_deg)
-        rad = np.radians(light_angle_deg)
-        offset_x = int(offset_distance_px * np.cos(rad))
-        offset_y = int(offset_distance_px * 1.3 * np.sin(rad))
+        # 3. Soft Directional Cast Shadow with Physical Distance Decay
+        # sigma(d) = sigma_0 + k * d, S(d) = S_max * exp(-lambda * d)
+        d = float(offset_distance_px)
+        cast_sigma = max(6.0, 2.0 + 0.65 * d)
+        cast_decay = float(np.exp(-0.018 * d))
+        cast_opacity = min(1.0, shadow_intensity * 0.55 * cast_decay)
 
-        cast_mask = alpha.filter(ImageFilter.GaussianBlur(radius=16))
+        rad = np.radians(light_angle_deg)
+        offset_x = int(d * np.cos(rad))
+        offset_y = int(d * 1.3 * np.sin(rad))
+
+        cast_mask = alpha.filter(ImageFilter.GaussianBlur(radius=cast_sigma))
         cast_shadow = Image.new(
             "RGBA", product.size,
-            (0, 0, 0, int(255 * shadow_intensity * 0.45))
+            (0, 0, 0, int(255 * cast_opacity))
         )
 
         # Calculate centering coordinates on background

@@ -103,14 +103,21 @@ class HandwritingEngine:
                     draw.text(char_pos, char, font=font, fill=ink_color)
                     char_w = draw.textlength(char, font=font) * spacing_fac
 
-                    # Synthesize continuous cursive Bezier ligatures
+                    # Synthesize continuous cursive Bezier ligatures with velocity-dependent stroke thickness
                     if prev_char and prev_exit:
                         entry_pt = (current_x + dx, baseline_y + dy + 10)
                         spline_pts = CursiveLigatureEngine.calculate_connecting_stroke(
                             prev_char, char, prev_exit, entry_pt, slant_deg=slant_deg
                         )
                         if spline_pts:
-                            draw.line(spline_pts, fill=ink_color, width=1)
+                            vel = max(0.4, float((dx**2 + dy**2)**0.5) + 1.0)
+                            stroke_w = max(1, int(PenPhysicsSimulator.calculate_stroke_thickness(
+                                velocity=vel,
+                                curvature=0.5,
+                                pen_type=self.profile.pen_type,
+                                base_width=2.0
+                            )))
+                            draw.line(spline_pts, fill=ink_color, width=stroke_w)
 
                     prev_char = char
                     prev_exit = (current_x + dx + char_w - 1, baseline_y + dy + 10)
@@ -168,6 +175,66 @@ class HandwritingEngine:
 
         draw.line([(left_m - 15, 0), (left_m - 15, height)], fill=(245, 175, 175, 200), width=2)
         return canvas
+
+    def export_vector_strokes_svg(
+        self,
+        text: str,
+        output_svg_path: Optional[str] = None
+    ) -> str:
+        """
+        Exports handwriting as continuous temporal stroke trajectories in SVG format
+        compatible with AxiDraw, CNC hardware, and vector pen plotters.
+        """
+        lines = self._wrap_text_to_margins(text) or [""]
+        width_px = int(8.5 * self.specs.dpi)
+        height_px = int(11.0 * self.specs.dpi)
+        start_y = int((self.specs.top_margin_mm / 25.4) * self.specs.dpi)
+
+        paths = []
+        drift_sim = BrownianDriftSimulator(
+            baseline_jitter_px=self.profile.baseline_jitter_px,
+            char_spacing_noise_px=self.profile.char_spacing_noise_px
+        )
+
+        for l_idx, line in enumerate(lines):
+            drift_sim.reset_line()
+            current_x = self.specs.left_margin_px
+            baseline_y = start_y + (l_idx * self.specs.line_pitch_px)
+            prev_char = None
+            prev_exit = None
+
+            for c_idx, char in enumerate(line):
+                is_end = (char == " ")
+                dx, dy = drift_sim.get_perturbation(char, is_end_of_word=is_end)
+                char_w = 14.0
+
+                if prev_char and prev_exit:
+                    entry_pt = (current_x + dx, baseline_y + dy + 10)
+                    spline_pts = CursiveLigatureEngine.calculate_connecting_stroke(
+                        prev_char, char, prev_exit, entry_pt
+                    )
+                    if spline_pts and len(spline_pts) >= 2:
+                        d_cmds = [f"M {spline_pts[0][0]:.1f},{spline_pts[0][1]:.1f}"]
+                        for pt in spline_pts[1:]:
+                            d_cmds.append(f"L {pt[0]:.1f},{pt[1]:.1f}")
+                        paths.append(f'<path d="{" ".join(d_cmds)}" fill="none" stroke="#1c3b72" stroke-width="1.8" stroke-linecap="round" />')
+
+                prev_char = char
+                prev_exit = (current_x + dx + char_w - 1, baseline_y + dy + 10)
+                current_x += char_w + dx
+
+        svg_content = f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width_px} {height_px}" width="{width_px}" height="{height_px}">
+  <g id="axidraw-layer" stroke-linecap="round" stroke-linejoin="round">
+    {"\n    ".join(paths)}
+  </g>
+</svg>'''
+
+        if output_svg_path:
+            out_p = Path(output_svg_path).resolve()
+            out_p.parent.mkdir(parents=True, exist_ok=True)
+            out_p.write_text(svg_content, encoding="utf-8")
+
+        return svg_content
 
 
 handwriting_engine = HandwritingEngine()

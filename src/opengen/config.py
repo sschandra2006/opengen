@@ -12,6 +12,36 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 
 
+def resolve_default_model() -> str:
+    """
+    Intelligently auto-resolves the default LLM model based on available environment credentials,
+    ensuring OpenGen never assumes a single vendor and works out-of-the-box with any configured provider.
+    Priority:
+      1. OPENGEN_MODEL or OPENGEN_DEFAULT_PRIMARY_MODEL (explicit override)
+      2. ANTHROPIC_API_KEY -> anthropic/claude-3-5-haiku-20241022
+      3. OPENAI_API_KEY -> openai/gpt-4o-mini
+      4. DEEPSEEK_API_KEY -> deepseek/deepseek-chat
+      5. GEMINI_API_KEY / GOOGLE_API_KEY -> gemini/gemini-2.5-flash
+      6. OPENROUTER_API_KEY -> openrouter/auto
+      7. Default local / offline fallback -> ollama/qwen3:8b
+    """
+    if os.environ.get("OPENGEN_MODEL"):
+        return os.environ["OPENGEN_MODEL"]
+    if os.environ.get("OPENGEN_DEFAULT_PRIMARY_MODEL"):
+        return os.environ["OPENGEN_DEFAULT_PRIMARY_MODEL"]
+    if os.environ.get("ANTHROPIC_API_KEY"):
+        return "anthropic/claude-3-5-haiku-20241022"
+    if os.environ.get("OPENAI_API_KEY"):
+        return "openai/gpt-4o-mini"
+    if os.environ.get("DEEPSEEK_API_KEY"):
+        return "deepseek/deepseek-chat"
+    if os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY"):
+        return "gemini/gemini-2.5-flash"
+    if os.environ.get("OPENROUTER_API_KEY"):
+        return "openrouter/auto"
+    return "ollama/qwen3:8b"
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_prefix="OPENGEN_",
@@ -42,9 +72,9 @@ class Settings(BaseSettings):
     MAX_EXPANSION_RATIO: float = 10.0
     ALLOWED_EXTENSIONS: Set[str] = {".docx", ".pdf", ".jpg", ".jpeg", ".png", ".txt", ".pptx", ".svg"}
 
-    # AI Provider Defaults
-    DEFAULT_LLM_MODEL: str = "gemini/gemini-2.5-flash"
-    DEFAULT_PRIMARY_MODEL: str = "gemini/gemini-2.5-flash"
+    # AI Provider Defaults (Dynamically resolved across all frontier, open-weight & local models)
+    DEFAULT_LLM_MODEL: str = resolve_default_model()
+    DEFAULT_PRIMARY_MODEL: str = resolve_default_model()
     DEFAULT_FAST_MODEL: str = "openai/gpt-4o-mini"
     DEFAULT_LOCAL_MODEL: str = "ollama/qwen3:8b"
     OLLAMA_BASE_URL: str = "http://localhost:11434"

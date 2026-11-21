@@ -77,14 +77,20 @@ class SoundDesigner:
         filter_parts = []
         mix_inputs = []
 
-        if vo_idx is not None:
-            filter_parts.append(f"[{vo_idx}:a]volume=1.0[vo_clean];")
+        if vo_idx is not None and bgm_idx is not None:
+            # 80 Hz high-pass filter to eliminate sub-bass rumble on voiceover
+            filter_parts.append(f"[{vo_idx}:a]highpass=f=80,volume=1.0[vo_raw];")
+            filter_parts.append("[vo_raw]asplit=2[vo_clean][vo_sc];")
+            # Dynamic sidechain ducking (-14 dB reduction under speech, dynamic swelling during pauses)
+            filter_parts.append(f"[{bgm_idx}:a][vo_sc]sidechaincompress=threshold=0.03:ratio=4:attack=50:release=300[bgm_ducked];")
             mix_inputs.append("[vo_clean]")
-
-        if bgm_idx is not None:
-            # Auto-duck background music by 14dB (volume=0.20)
-            filter_parts.append(f"[{bgm_idx}:a]volume=0.20[bgm_ducked];")
             mix_inputs.append("[bgm_ducked]")
+        elif vo_idx is not None:
+            filter_parts.append(f"[{vo_idx}:a]highpass=f=80,volume=1.0[vo_clean];")
+            mix_inputs.append("[vo_clean]")
+        elif bgm_idx is not None:
+            filter_parts.append(f"[{bgm_idx}:a]volume=0.85[bgm_clean];")
+            mix_inputs.append("[bgm_clean]")
 
         # Inject SFX cues
         for i, cue in enumerate(sfx_cues):

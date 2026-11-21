@@ -11,6 +11,25 @@ from opengen.hardware.models import (
 logger = logging.getLogger(__name__)
 
 
+def resolve_tier_remote_model(tier: HardwareTier) -> str:
+    """Dynamically resolves the optimal cloud model for the given hardware tier based on configured keys."""
+    import os
+    from opengen.config import resolve_default_model, settings
+    default_m = resolve_default_model()
+    anthropic_key = os.environ.get("ANTHROPIC_API_KEY") or settings.ANTHROPIC_API_KEY
+    openai_key = os.environ.get("OPENAI_API_KEY") or settings.OPENAI_API_KEY
+    deepseek_key = os.environ.get("DEEPSEEK_API_KEY") or settings.DEEPSEEK_API_KEY
+    if tier == HardwareTier.TIER_3_STUDIO:
+        if anthropic_key:
+            return "anthropic/claude-3-7-sonnet"
+        if openai_key:
+            return "openai/gpt-4o"
+        if deepseek_key:
+            return "deepseek/deepseek-reasoner"
+        return default_m
+    return default_m
+
+
 class TierClassifier:
     """Classifies host hardware and formulates adaptive execution policies."""
 
@@ -62,7 +81,7 @@ class TierClassifier:
                 max_output_tokens=768,
                 allow_local_llm=False,
                 recommended_local_model="ollama/qwen2.5:1.5b",
-                recommended_remote_model="gemini/gemini-2.5-flash",
+                recommended_remote_model=resolve_tier_remote_model(tier),
                 image_max_resolution=512,
                 image_enable_cpu_offload=True,
                 image_enable_vae_tiling=True,
@@ -84,7 +103,7 @@ class TierClassifier:
                 max_output_tokens=1536,
                 allow_local_llm=True,
                 recommended_local_model="ollama/qwen2.5:7b",
-                recommended_remote_model="gemini/gemini-2.5-flash",
+                recommended_remote_model=resolve_tier_remote_model(tier),
                 image_max_resolution=768,
                 image_enable_cpu_offload=True,
                 image_enable_vae_tiling=True,
@@ -106,7 +125,7 @@ class TierClassifier:
                 max_output_tokens=4096,
                 allow_local_llm=True,
                 recommended_local_model="ollama/qwen2.5:14b",
-                recommended_remote_model="gemini/gemini-2.5-flash",
+                recommended_remote_model=resolve_tier_remote_model(tier),
                 image_max_resolution=1024,
                 image_enable_cpu_offload=False,
                 image_enable_vae_tiling=True,
@@ -128,7 +147,7 @@ class TierClassifier:
                 max_output_tokens=8192,
                 allow_local_llm=True,
                 recommended_local_model="ollama/qwen2.5:72b",
-                recommended_remote_model="anthropic/claude-3-7-sonnet",
+                recommended_remote_model=resolve_tier_remote_model(tier),
                 image_max_resolution=2048,
                 image_enable_cpu_offload=False,
                 image_enable_vae_tiling=False,

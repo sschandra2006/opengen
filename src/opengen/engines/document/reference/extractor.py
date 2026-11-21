@@ -169,6 +169,15 @@ class ReferenceIntelligenceEngine:
 
         # 5. Save to L2 Cache
         cache_manager.set_reference_extraction(file_hash, extracted_info.model_dump())
+
+        # 6. Graphify and Persist into Cross-Studio Knowledge Graph Store (0 tokens)
+        try:
+            from opengen.graph import DocumentGraphifier, graph_store
+            kg = DocumentGraphifier.graphify(extracted_info)
+            graph_store.save_graph(kg)
+        except Exception as ge:
+            logger.warning(f"Graphify extraction for '{filename}' non-blocking notice: {ge}")
+
         return extracted_info
 
 

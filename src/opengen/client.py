@@ -131,6 +131,19 @@ class HandwritingResult:
         return str(dest)
 
 
+@dataclass
+class AudioResult:
+    file_path: str
+    cost_usd: float = 0.0
+    job_id: Optional[str] = None
+
+    def save(self, destination: Union[str, Path]) -> str:
+        dest = Path(destination)
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(self.file_path, str(dest))
+        return str(dest)
+
+
 class DocumentsClient:
     """SDK client for Engine A: Document Generation."""
 
@@ -413,6 +426,7 @@ class PresentationsClient:
         theme: str = "modern_corporate",
         output_pptx_path: Optional[Union[str, Path]] = None,
         source_materials: Optional[str] = None,
+        subgraph_context: Optional[str] = None,
     ) -> PresentationResult:
         """Generates a 100% native editable PowerPoint presentation inside an isolated run folder."""
         job_id, run_dir = settings.allocate_run_dir("presentations")
@@ -432,6 +446,7 @@ class PresentationsClient:
                 slide_count=slide_count,
                 theme_name=theme,
                 source_materials=source_materials,
+                subgraph_context=subgraph_context,
             )
             shutil.copy2(staged_pptx, target_pptx)
 
@@ -1041,6 +1056,49 @@ class MotionClient:
         )
 
 
+class AudioClient:
+    """SDK client for Voiceover & Audio Generation Studio."""
+
+    def __init__(self, parent: "OpenGenClient"):
+        self.parent = parent
+
+    def generate(
+        self,
+        text: str,
+        voice: str = "narrator",
+        output_path: Optional[Union[str, Path]] = None,
+        apply_dsp_mastering: bool = True,
+        style: str = "conversational"
+    ) -> AudioResult:
+        job_id, run_dir = settings.allocate_run_dir("audio")
+        job_tracker = CostTracker()
+        target_file = str(output_path) if output_path else str(run_dir / f"voice_{job_id}.mp3")
+
+        from opengen.engines.audio.engine import AudioEngine
+        res_file = AudioEngine.generate_speech(
+            text=text,
+            voice=voice,
+            output_path=target_file,
+            apply_dsp_mastering=apply_dsp_mastering,
+            style=style
+        )
+
+        telemetry = job_tracker.get_aggregate_cost()
+        self.parent._record_completed_job(
+            job_id=job_id,
+            engine="audio",
+            run_dir=run_dir,
+            artifacts={"audio": res_file},
+            telemetry=telemetry,
+        )
+
+        return AudioResult(
+            file_path=res_file,
+            cost_usd=telemetry.get("total_cost_usd", 0.0),
+            job_id=job_id,
+        )
+
+
 class JobsClient:
     """SDK client for persisted job lookup and isolated per-job cost accounting."""
 
@@ -1124,6 +1182,69 @@ class HardwareClient:
         hardware_governor.refresh()
 
 
+class GraphClient:
+    """SDK client for the Graphify Knowledge Graph Subsystem.
+    Provides persistent entity graph memory, targeted subgraph extraction,
+    and prompt token reduction across all generation studios.
+    """
+
+    def __init__(self, parent: "OpenGenClient"):
+        self.parent = parent
+        from opengen.graph import graph_store
+        self.store = graph_store
+
+    def get(self, doc_hash: str) -> Optional[Any]:
+        """Loads a stored KnowledgeGraph for the specified document hash."""
+        return self.store.get_graph(doc_hash)
+
+    def graphify(self, file_path: Union[str, Path]) -> Any:
+        """Extracts and stores a KnowledgeGraph from a local PDF, TXT, or report document."""
+        from opengen.engines.document.reference.extractor import ReferenceExtractor
+        from opengen.graph import DocumentGraphifier
+        info = ReferenceExtractor.extract_reference(str(file_path))
+        kg = DocumentGraphifier.graphify(info)
+        self.store.save_graph(kg)
+        return kg
+
+    def query_subgraph(
+        self,
+        doc_hash: str,
+        target_types: List[str],
+        max_depth: int = 1
+    ) -> Optional[Any]:
+        """Extracts a pruned subgraph containing only requested entity types."""
+        return self.store.get_subgraph(doc_hash, target_types=target_types, max_depth=max_depth)
+
+    def format_prompt(
+        self,
+        doc_hash: str,
+        intent: str = "presentation_traction",
+        max_depth: int = 1
+    ) -> str:
+        """Extracts a task-targeted subgraph and formats it into compact prompt text."""
+        from opengen.graph import SubgraphPruner
+        kg = self.get(doc_hash)
+        if not kg:
+            return "# KNOWLEDGE GRAPH: [Document not found]"
+        return SubgraphPruner.format_dense_prompt(kg, intent=intent, max_depth=max_depth)
+
+    def audit_hallucination(self, doc_hash: str, candidate_value: str) -> bool:
+        """Deterministic zero-token verification: checks if a value exists in the knowledge graph."""
+        kg = self.get(doc_hash)
+        if not kg:
+            return False
+        return kg.validate_entity_presence(candidate_value)
+
+    def token_savings(self, doc_hash: str, raw_text: str, intent: str = "presentation_traction") -> Dict[str, Any]:
+        """Computes empirical token reduction metrics for the given intent."""
+        from opengen.graph import SubgraphPruner
+        kg = self.get(doc_hash)
+        if not kg:
+            return {"error": "Document not found in knowledge graph"}
+        sub = SubgraphPruner.prune_for_intent(kg, intent)
+        return SubgraphPruner.calculate_token_savings(sub, raw_text)
+
+
 class OpenGenClient:
     """
     Main entry point for the OpenGen Python SDK.
@@ -1146,10 +1267,12 @@ class OpenGenClient:
         self.images = ImagesClient(self)
         self.handwriting = HandwritingClient(self)
         self.motion = MotionClient(self)
+        self.audio = AudioClient(self)
         self.jobs = JobsClient(self)
         self.brand_kits = BrandKitsClient(self)
         self.critic = CriticClient(self)
         self.hardware = HardwareClient(self)
+        self.graph = GraphClient(self)
 
     def _make_provider_manager(self, job_tracker: CostTracker) -> ProviderManager:
         """Creates an isolated ProviderManager scoped to a single job."""

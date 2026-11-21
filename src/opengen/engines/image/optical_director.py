@@ -24,6 +24,18 @@ class OpticalPromptDirector:
         "high_key": "Lighting: diffused dual-bank softbox, clean white bounce fill, perfectly balanced illumination"
     }
 
+    DEFAULT_NEGATIVE_PROMPT = (
+        "plastic skin, airbrushed, 3d render, CGI, glossy, waxy sheen, doll-like, "
+        "mutated hands, missing fingers, extra limbs, floating object, text artifacts, watermark, lowres, oversaturated"
+    )
+
+    @classmethod
+    def get_negative_prompt(cls, style: str = "photorealistic") -> str:
+        """Returns standard anti-slop negative prompt constraints for the given style."""
+        if style in ["vector_illustration", "svg", "minimal"]:
+            return "raster, photographic, realistic shading, noisy gradients, 3d render, blurry edges, pixelated"
+        return cls.DEFAULT_NEGATIVE_PROMPT
+
     @classmethod
     def expand_prompt(
         cls,
@@ -71,6 +83,6 @@ class OpticalPromptDirector:
             f"Commercial photography of {raw_prompt}. "
             f"{optics}. {lighting}. "
             f"Organic micro-textures, zero plastic sheen, realistic surface imperfections, "
-            f"ISO 64, 8k resolution, raw color grading.{neg_space}{brand_tokens}"
+            f"ISO 64, Kodak Portra 400 emulsion, authentic skin micro-texture, visible peach fuzz, zero digital airbrushing, raw color grading.{neg_space}{brand_tokens}"
         )
         return expanded.strip()

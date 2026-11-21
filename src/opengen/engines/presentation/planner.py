@@ -25,7 +25,8 @@ class PresentationPlanner:
         slide_count: int = 8,
         theme_name: str = "modern_corporate",
         source_materials: Optional[str] = None,
-        use_bento: bool = False
+        use_bento: bool = False,
+        subgraph_context: Optional[str] = None
     ) -> PresentationDeckSpec:
         logger.info(f"Planning {slide_count}-slide presentation for topic: '{topic}' (bento={use_bento})")
 
@@ -44,12 +45,14 @@ class PresentationPlanner:
                 "Plan a 16:9 widescreen presentation deck. "
                 "For each slide, choose an appropriate layout: "
                 "'title_hero' (slide 1), 'two_column', 'three_column', 'four_metrics', 'split_chart', or 'single_column'. "
-                "Ensure bullet points are punchy, concise, and executive-ready. "
+                "STRICT DESIGN RULE: Avoid lazy bullet lists. Structure takeaways into distinct concise semantic cards. "
                 "Include 1-2 quantitative chart slides with sample categories and numerical values."
             )
 
         user_prompt = f"Topic: {topic}\nTarget Slide Count: {slide_count}\nTheme: {theme_name}"
-        if source_materials:
+        if subgraph_context:
+            user_prompt += f"\nTargeted Knowledge Graph Context:\n{subgraph_context}"
+        elif source_materials:
             user_prompt += f"\nReference Context:\n{source_materials[:3000]}"
 
         try:

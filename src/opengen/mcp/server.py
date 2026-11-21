@@ -486,6 +486,49 @@ def tool_get_hardware_profile() -> Dict[str, Any]:
         return {"status": "error", "message": str(e)}
 
 
+def tool_graphify_document(
+    file_path: str
+) -> Dict[str, Any]:
+    """Graphifies a document into an interconnected Knowledge Graph, storing it in persistent SQLite memory."""
+    try:
+        kg = client.graph.graphify(file_path)
+        return {
+            "status": "completed",
+            "document_hash": kg.document_hash,
+            "node_count": len(kg.nodes),
+            "edge_count": len(kg.edges),
+            "sample_nodes": [n.canonical_name for n in list(kg.nodes.values())[:10]]
+        }
+    except Exception as e:
+        return {"status": "failed", "error": str(e)}
+
+
+def tool_query_subgraph(
+    document_hash: str,
+    target_types: Optional[List[str]] = None,
+    intent: Optional[str] = None
+) -> Dict[str, Any]:
+    """Extracts a pruned Knowledge Graph subgraph for a document, slashing prompt context tokens by 90%-98%."""
+    try:
+        if intent:
+            prompt_ctx = client.graph.format_prompt(document_hash, intent=intent)
+            return {"status": "completed", "prompt_context": prompt_ctx}
+        else:
+            types = target_types or ["product", "sku", "price"]
+            sub = client.graph.query_subgraph(document_hash, target_types=types)
+            if not sub:
+                return {"status": "failed", "error": "Document not found in knowledge graph"}
+            return {
+                "status": "completed",
+                "document_hash": document_hash,
+                "node_count": len(sub.nodes),
+                "edge_count": len(sub.edges),
+                "compact_context": sub.to_compact_prompt_context()
+            }
+    except Exception as e:
+        return {"status": "failed", "error": str(e)}
+
+
 # -------------------------------------------------------------------------
 # Tool Registry Map
 # -------------------------------------------------------------------------
@@ -518,6 +561,8 @@ MCP_TOOLS = {
     "export_nle_edl": tool_export_nle_edl,
     "export_nle_fcpxml": tool_export_nle_fcpxml,
     "generate_marp_presentation": tool_generate_marp_presentation,
+    "graphify_document": tool_graphify_document,
+    "query_subgraph": tool_query_subgraph,
 }
 
 

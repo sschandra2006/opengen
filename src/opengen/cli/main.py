@@ -30,6 +30,7 @@ brand_app = typer.Typer(help="Cross-Studio Brand Kits and Design Tokens.", no_ar
 critic_app = typer.Typer(help="Autonomous Creative Critic Gate across all 5 studios.", no_args_is_help=True)
 config_app = typer.Typer(help="Configuration and provider diagnostics.", no_args_is_help=True)
 hardware_app = typer.Typer(help="Adaptive hardware compute inspection & tier governance.", no_args_is_help=True)
+graph_app = typer.Typer(help="Graphify Knowledge Graph memory & token reduction.", no_args_is_help=True)
 
 app.add_typer(doc_app, name="document")
 app.add_typer(pres_app, name="presentation")
@@ -40,6 +41,7 @@ app.add_typer(brand_app, name="brand")
 app.add_typer(critic_app, name="critic")
 app.add_typer(config_app, name="config")
 app.add_typer(hardware_app, name="hardware")
+app.add_typer(graph_app, name="graph")
 
 
 # -------------------------------------------------------------------------
@@ -602,6 +604,33 @@ def critic_audit(
 
 
 # -------------------------------------------------------------------------
+# Knowledge Graph (Graphify) CLI Commands
+# -------------------------------------------------------------------------
+
+@graph_app.command("build")
+def graph_build(
+    file_path: Path = typer.Argument(..., help="Path to PDF, TXT, or report document to Graphify")
+):
+    """Builds and persists a Knowledge Graph from a document without consuming LLM tokens."""
+    with console.status(f"[bold green]Graphifying document '{file_path.name}'...[/bold green]"):
+        kg = client.graph.graphify(str(file_path))
+
+    console.print(f"[bold green]Success![/bold green] Graphified '{file_path.name}'")
+    console.print(f"Document Hash: [cyan]{kg.document_hash}[/cyan]")
+    console.print(f"Entities (Nodes): [yellow]{len(kg.nodes)}[/yellow] | Relations (Edges): [yellow]{len(kg.edges)}[/yellow]")
+
+
+@graph_app.command("query")
+def graph_query(
+    doc_hash: str = typer.Argument(..., help="Document hash in Knowledge Graph store"),
+    intent: str = typer.Option("presentation_traction", "--intent", "-i", help="Target intent (presentation_traction, catalog_pricing, etc.)")
+):
+    """Extracts a task-targeted compact subgraph prompt block."""
+    dense_context = client.graph.format_prompt(doc_hash, intent=intent)
+    console.print(dense_context)
+
+
+# -------------------------------------------------------------------------
 # Configuration & Diagnostics CLI Commands
 # -------------------------------------------------------------------------
 
@@ -616,17 +645,31 @@ def config_check():
     table.add_row("Cache Directory", "READY", str(settings.CACHE_DIR))
     table.add_row("Output Directory", "READY", str(settings.OUTPUT_DIR))
     table.add_row("Upload Directory", "READY", str(settings.UPLOAD_DIR))
+    table.add_row("Resolved Primary Model", "AUTO", settings.DEFAULT_PRIMARY_MODEL)
 
-    # Check keys
+    # Check multi-vendor keys and local runtimes
     openai_key = "Configured" if settings.OPENAI_API_KEY else "Not Configured (Optional)"
+    anthropic_key = "Configured" if settings.ANTHROPIC_API_KEY else "Not Configured (Optional)"
+    deepseek_key = "Configured" if settings.DEEPSEEK_API_KEY else "Not Configured (Optional)"
     gemini_key = "Configured" if settings.GEMINI_API_KEY else "Not Configured (Optional)"
+    openrouter_key = "Configured" if settings.OPENROUTER_API_KEY else "Not Configured (Optional)"
     together_key = "Configured" if settings.TOGETHER_API_KEY else "Not Configured (Optional)"
 
     table.add_row("OpenAI API Key", "OK" if settings.OPENAI_API_KEY else "OFF", openai_key)
+    table.add_row("Anthropic API Key", "OK" if settings.ANTHROPIC_API_KEY else "OFF", anthropic_key)
+    table.add_row("DeepSeek API Key", "OK" if settings.DEEPSEEK_API_KEY else "OFF", deepseek_key)
     table.add_row("Gemini API Key", "OK" if settings.GEMINI_API_KEY else "OFF", gemini_key)
+    table.add_row("OpenRouter API Key", "OK" if settings.OPENROUTER_API_KEY else "OFF", openrouter_key)
     table.add_row("Together API Key", "OK" if settings.TOGETHER_API_KEY else "OFF", together_key)
+    table.add_row("Ollama Runtime", "LOCAL", settings.OLLAMA_BASE_URL)
 
     console.print(table)
+
+
+@app.command("doctor")
+def doctor():
+    """Runs full system diagnostics across providers, directories, and hardware."""
+    config_check()
 
 
 # -------------------------------------------------------------------------
