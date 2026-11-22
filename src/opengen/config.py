@@ -77,7 +77,7 @@ class Settings(BaseSettings):
     DEFAULT_PRIMARY_MODEL: str = resolve_default_model()
     DEFAULT_FAST_MODEL: str = "openai/gpt-4o-mini"
     DEFAULT_LOCAL_MODEL: str = "ollama/huihui_ai/qwen2.5-abliterated:7b"
-    OLLAMA_BASE_URL: str = "http://localhost:11434"
+    OLLAMA_BASE_URL: str = os.environ.get("OPENGEN_OLLAMA_BASE_URL") or os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434")
 
     # Token Reduction & Optimization Configurations (UTRA)
     ENABLE_DENSE_DSL: bool = True
