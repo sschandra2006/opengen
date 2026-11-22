@@ -1,0 +1,19 @@
+FROM huihui_ai/qwen2.5-abliterated:7b
+
+# Surgical ChatML Template enforcing zero conversational preamble
+TEMPLATE """{{ if .System }}<|im_start|>system
+{{ .System }}<|im_end|>
+{{ end }}{{ if .Prompt }}<|im_start|>user
+{{ .Prompt }}<|im_end|>
+{{ end }}<|im_start|>assistant
+"""
+
+# Deterministic greedy decoding & early exit stop sequences
+PARAMETER temperature 0.0
+PARAMETER top_p 1.0
+PARAMETER stop "<|im_end|>"
+PARAMETER stop "<|endoftext|>"
+PARAMETER stop "```"
+PARAMETER stop "\n\n\n"
+PARAMETER num_predict 1024
+PARAMETER num_ctx 4096

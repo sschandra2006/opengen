@@ -41,6 +41,8 @@ env/
 *.onnx
 *.safetensors
 *.bin
+*.gguf
+*.h5
 *.tar
 *.zip
 *.7z
@@ -51,3 +53,13 @@ pretrained_weights/
 **/pretrained_weights/
 checkpoints/
 **/checkpoints/
+qwen_opengen_output/
+**/qwen_opengen_output/
+opengen_qwen_q4/
+**/opengen_qwen_q4/
+.cache/
+**/.cache/
+huggingface/
+**/huggingface/
+extracted_*.txt
+*.ir.json

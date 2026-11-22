@@ -21,9 +21,12 @@ logger = logging.getLogger(__name__)
 T = TypeVar("T", bound=BaseModel)
 
 NEGATIVE_AESTHETIC_INVARIANT = (
-    "\nSTRICT INVARIANT: You MUST return ONLY valid JSON matching the schema.\n"
-    "DO NOT include any conversational preamble, explanations, or postscripts.\n"
-    "DO NOT include emojis (such as 🚀, 🔥, 💡, 🥛, 📈).\n"
+    "\n[ZERO-CHATTER DIRECTIVE & NEGATIVE AESTHETIC INVARIANT]\n"
+    "1. STRICT INVARIANT: You MUST return ONLY valid JSON matching the schema.\n"
+    "2. DO NOT include any conversational preamble, apologies, explanations, or postscripts.\n"
+    "3. DO NOT include markdown code blocks (no ``` or ```json).\n"
+    "4. DO NOT include emojis (such as 🚀, 🔥, 💡, 🥛, 📈).\n"
+    "5. Terminate generation immediately after the final character of JSON.\n"
 )
 
 
@@ -143,7 +146,8 @@ class ProviderManager:
                 {"role": "user", "content": prompt}
             ],
             "temperature": temperature,
-            "timeout": 90
+            "timeout": 90,
+            "stop": getattr(settings, "MAX_STREAM_STOP_TOKENS", ["\n\n\n", "```", "<|im_end|>"])
         }
 
         # Apply adaptive hardware token budgeting

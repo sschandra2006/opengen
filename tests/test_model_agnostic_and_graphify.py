@@ -61,7 +61,7 @@ def test_dynamic_model_auto_resolution(monkeypatch):
     # 6. Completely offline / no cloud keys configured -> local Ollama fallback
     monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
     monkeypatch.delenv("OPENGEN_DEFAULT_PRIMARY_MODEL", raising=False)
-    assert resolve_default_model() == "ollama/qwen3:8b"
+    assert resolve_default_model() == "ollama/huihui_ai/qwen2.5-abliterated:7b"
 
 
 def test_hardware_classifier_model_agnostic_resolution(monkeypatch):

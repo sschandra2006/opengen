@@ -38,8 +38,13 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: Optional[str] = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
     GEMINI_MODEL: str = "gemini-2.5-flash"
     OLLAMA_BASE_URL: str = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434")
-    OLLAMA_MODEL: str = os.environ.get("OLLAMA_MODEL", "qwen3:8b")
+    OLLAMA_MODEL: str = os.environ.get("OLLAMA_MODEL", "huihui_ai/qwen2.5-abliterated:7b")
     USE_LOCAL_FALLBACK: bool = True
+
+    # Token Reduction & Optimization Configurations (UTRA)
+    ENABLE_DENSE_DSL: bool = True
+    SURGICAL_REFLECTION_ENABLED: bool = True
+    MAX_STREAM_STOP_TOKENS: list = ["\n\n\n", "```", "<|im_end|>", "<|endoftext|>"]
 
     # Processing limits
     MAX_VALIDATION_ATTEMPTS: int = 3

@@ -144,6 +144,22 @@ class AudioResult:
         return str(dest)
 
 
+@dataclass
+class UIResult:
+    code: str
+    is_valid: bool
+    critic_score: int
+    critic_violations: List[str] = field(default_factory=list)
+    file_path: Optional[str] = None
+    job_id: Optional[str] = None
+
+    def save(self, destination: Union[str, Path]) -> str:
+        dest = Path(destination)
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_text(self.code, encoding="utf-8")
+        return str(dest)
+
+
 class DocumentsClient:
     """SDK client for Engine A: Document Generation."""
 
@@ -1099,6 +1115,60 @@ class AudioClient:
         )
 
 
+class UIClient:
+    """SDK client for Web UI & Interactive Artifacts (Engine 7)."""
+
+    def __init__(self, parent: "OpenGenClient"):
+        self.parent = parent
+
+    def generate_bento_dashboard(
+        self,
+        title: str,
+        cards: List[Dict[str, Any]],
+        subtitle: Optional[str] = None,
+        brand_id: Optional[str] = None,
+        output_path: Optional[Union[str, Path]] = None,
+    ) -> UIResult:
+        """Generates a responsive, token-bound shadcn/Tailwind Bento Dashboard HTML component."""
+        from opengen.engines.ui.engine import UIEngine
+        from opengen.creative.quality_gate import CreativeCriticGate
+
+        job_id, run_dir = settings.allocate_run_dir("ui")
+        target_file = str(output_path) if output_path else str(run_dir / f"dashboard_{job_id}.html")
+
+        brand = self.parent.brand_kits.get(brand_id) if brand_id else None
+        code = UIEngine.generate_bento_dashboard(
+            cards=cards,
+            title=title,
+            subtitle=subtitle,
+            brand=brand,
+            output_html_path=target_file,
+        )
+
+        audit = CreativeCriticGate.audit_ui(code)
+        artifacts = {"html": target_file} if target_file else {}
+        self.parent._record_completed_job(
+            job_id=job_id,
+            engine="ui",
+            run_dir=run_dir,
+            artifacts=artifacts,
+            telemetry={"total_cost_usd": 0.0, "input_tokens": 0, "output_tokens": 0},
+        )
+        return UIResult(
+            code=code,
+            is_valid=audit["passed"],
+            critic_score=audit["score"],
+            critic_violations=audit["violations"],
+            file_path=target_file,
+            job_id=job_id,
+        )
+
+    def audit(self, code_or_spec: Union[str, Dict[str, Any]]) -> Dict[str, Any]:
+        """Audits UI/JSX/HTML code against strict AST, token binding, and anti-slop rules."""
+        from opengen.creative.quality_gate import CreativeCriticGate
+        return CreativeCriticGate.audit_ui(code_or_spec)
+
+
 class JobsClient:
     """SDK client for persisted job lookup and isolated per-job cost accounting."""
 
@@ -1268,6 +1338,7 @@ class OpenGenClient:
         self.handwriting = HandwritingClient(self)
         self.motion = MotionClient(self)
         self.audio = AudioClient(self)
+        self.ui = UIClient(self)
         self.jobs = JobsClient(self)
         self.brand_kits = BrandKitsClient(self)
         self.critic = CriticClient(self)

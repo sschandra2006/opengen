@@ -219,3 +219,100 @@ def test_sdk_client_audio_endpoint(tmp_path):
     )
     assert Path(res.file_path).exists()
     assert res.job_id is not None
+
+
+def test_ui_critic_and_ast_linter():
+    # 1. Reject generic bootstrap and inline style hacks
+    bad_code = """
+    <div class="jumbotron">
+      <h1 style="color: purple; background: yellow; font-size: 24px;">Old 2018 Hero</h1>
+      <button class="btn btn-primary"><svg></svg></button>
+      <table><tr><td>Unstyled Data</td></tr></table>
+      <img src="logo.png">
+    """
+    audit = CreativeCriticGate.audit_ui(bad_code)
+    assert audit["passed"] is False
+    assert any("GENERIC_BOOTSTRAP_SYNDROME" in v for v in audit["violations"])
+    assert any("INLINE_STYLE_HACK" in v for v in audit["violations"])
+    assert any("UNSTYLED_DATA_TABLE" in v for v in audit["violations"])
+    assert any("BROKEN_COMPONENT_AST" in v for v in audit["violations"])
+    assert any("ACCESSIBILITY_DEFICIT" in v for v in audit["violations"])
+
+    # 2. Accept clean shadcn/Tailwind bento dashboard
+    from opengen.engines.ui.engine import UIEngine
+    cards = [
+        {"title": "Active Pipelines", "value": "1,420", "description": "High-throughput jobs.", "col_span": 1, "trend_badge": "+18%"},
+        {"title": "P99 Render Latency", "value": "42ms", "description": "Deterministic Rust compiler.", "col_span": 2}
+    ]
+    clean_html = UIEngine.generate_bento_dashboard(cards=cards, title="OpenGen System Metrics")
+    clean_audit = CreativeCriticGate.audit_ui(clean_html)
+    assert clean_audit["passed"] is True
+    assert len(clean_audit["violations"]) == 0
+    assert clean_audit["score"] == 100
+
+
+def test_negative_space_quality_gate():
+    # 1. Presentation slide crowding (>8 cards on a slide)
+    crowded_deck = {
+        "slides": [
+            {
+                "slide_number": 1,
+                "layout_type": "bento_grid",
+                "title": "Overcrowded Slide",
+                "bento_cards": [{"title": f"Card {i}", "col_span": 2} for i in range(9)]
+            }
+        ]
+    }
+    audit_pres = CreativeCriticGate.audit_presentation(crowded_deck)
+    assert audit_pres["passed"] is False
+    assert any("NEGATIVE_SPACE_DEFICIT" in v for v in audit_pres["violations"])
+
+    # 2. Document narrative wall of text (>250 words without break)
+    crowded_doc = {
+        "title": "Wall of Text Report",
+        "narrative": " ".join(["enterprise"] * 260)
+    }
+    audit_doc = CreativeCriticGate.audit_document(crowded_doc)
+    assert audit_doc["passed"] is False
+    assert any("NEGATIVE_SPACE_DEFICIT" in v for v in audit_doc["violations"])
+
+
+def test_ui_client_sdk_and_api(tmp_path):
+    from fastapi.testclient import TestClient
+    from opengen.api import app
+
+    # 1. SDK Client
+    client = OpenGenClient()
+    assert hasattr(client, "ui")
+    cards = [
+        {"title": "Throughput", "value": "500 req/s", "description": "Peak capacity.", "trend_badge": "Optimal"}
+    ]
+    res = client.ui.generate_bento_dashboard(
+        title="Production Analytics",
+        cards=cards,
+        output_path=tmp_path / "dashboard.html"
+    )
+    assert res.is_valid is True
+    assert Path(res.file_path).exists()
+    assert "<!DOCTYPE html>" in res.code
+
+    # 2. REST API /ui/audit and /ui/bento
+    api_client = TestClient(app)
+    resp_bento = api_client.post("/api/v1/ui/bento", json={
+        "title": "API Cloud Dashboard",
+        "cards": [{"title": "API Status", "value": "99.99%", "description": "All systems nominal."}]
+    })
+    assert resp_bento.status_code == 200
+    bento_data = resp_bento.json()
+    assert bento_data["status"] == "completed"
+    assert bento_data["critic_score"] == 100
+
+    # 3. REST API /audio/generate
+    resp_audio = api_client.post("/api/v1/audio/generate", json={
+        "text": "OpenGen REST API speech synthesis verification.",
+        "voice": "narrator"
+    })
+    assert resp_audio.status_code == 200
+    audio_data = resp_audio.json()
+    assert audio_data["status"] == "completed"
+    assert Path(audio_data["file_path"]).exists()

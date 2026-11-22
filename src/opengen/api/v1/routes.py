@@ -116,6 +116,30 @@ class CreativeAuditRequest(BaseModel):
     payload: Dict[str, Any]
 
 
+class AudioGenerateRequest(BaseModel):
+    text: str
+    voice: str = "narrator"
+    apply_dsp_mastering: bool = True
+    style: str = "conversational"
+
+
+class AudioMasterRequest(BaseModel):
+    input_path: str
+    output_path: Optional[str] = None
+
+
+class UIAuditRequest(BaseModel):
+    code: str
+    framework: str = "react_tailwind"
+
+
+class UIBentoRequest(BaseModel):
+    title: str
+    cards: List[Dict[str, Any]]
+    subtitle: Optional[str] = None
+    brand_id: Optional[str] = None
+
+
 # -------------------------------------------------------------------------
 # Endpoints
 # -------------------------------------------------------------------------
@@ -427,6 +451,70 @@ def audit_creative_payload(req: CreativeAuditRequest):
     try:
         report = client.critic.audit(engine=req.engine, payload=req.payload)
         return {"status": "completed", "report": report}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/audio/generate")
+def generate_audio(req: AudioGenerateRequest):
+    """Synthesizes broadcast-grade voiceover with dynamic punctuation timing and EBU R128 mastering."""
+    try:
+        res = client.audio.generate(
+            text=req.text,
+            voice=req.voice,
+            apply_dsp_mastering=req.apply_dsp_mastering,
+            style=req.style
+        )
+        return {
+            "status": "completed",
+            "file_path": res.file_path,
+            "cost_usd": res.cost_usd,
+            "job_id": res.job_id
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/audio/master")
+def master_audio(req: AudioMasterRequest):
+    """Applies DSP voice mastering: 80 Hz high-pass filter + EBU R128 (-14 LUFS) normalization."""
+    try:
+        from opengen.engines.audio.engine import AudioEngine
+        out_p = req.output_path or req.input_path.replace(".mp3", "_mastered.mp3")
+        mastered = AudioEngine.master_voice_track(req.input_path, out_p)
+        return {"status": "completed", "file_path": mastered}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/ui/audit")
+def audit_ui_code(req: UIAuditRequest):
+    """Audits Web UI, JSX, or HTML code against strict AST, token binding, and anti-slop rules."""
+    try:
+        report = client.ui.audit(req.code)
+        return {"status": "completed", "report": report}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/ui/bento")
+def generate_ui_bento(req: UIBentoRequest):
+    """Generates an accessible, responsive Tailwind + shadcn/ui Bento Dashboard component."""
+    try:
+        res = client.ui.generate_bento_dashboard(
+            title=req.title,
+            cards=req.cards,
+            subtitle=req.subtitle,
+            brand_id=req.brand_id
+        )
+        return {
+            "status": "completed",
+            "file_path": res.file_path,
+            "code": res.code,
+            "critic_score": res.critic_score,
+            "critic_violations": res.critic_violations,
+            "job_id": res.job_id
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

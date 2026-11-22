@@ -97,8 +97,8 @@ document_generator/
 
 ### 1. Requirements
 - Python 3.11+ (Tested on Python 3.13)
-- Ollama with `qwen3:8b` (Local inference)
-- Google Gemini API key (Optional for cloud reasoning; defaults to local Qwen3:8B)
+- Ollama with `qwen2.5:7b` (Local inference)
+- Google Gemini API key (Optional for cloud reasoning; defaults to local Qwen 2.5 7B)
 - Microsoft Word (Windows COM) or LibreOffice (Headless) for visual PDF rendering
 
 ### 2. Setup Environment
@@ -122,6 +122,15 @@ http://localhost:8000
 
 ---
 
+## Architecture & Research Reports
+All deep-dive specifications, taxonomy matrices, and implementation plans are archived in the **[`reports/`](reports/)** directory:
+* **[Universal Token-Reduction Report](reports/OPENGEN_UNIVERSAL_TOKEN_REDUCTION_AND_MODEL_OPTIMIZATION_REPORT.md)**
+* **[Adaptive Hardware & 100-Repo Optimization Plan](reports/OPENGEN_ADAPTIVE_HARDWARE_AND_100_REPO_OPTIMIZATION_IMPLEMENTATION_PLAN.md)**
+* **[Unified Creative Design Specification](reports/OPENGEN_UNIFIED_CREATIVE_DESIGN_AND_INTELLIGENCE_SPECIFICATION.md)**
+* **[Full Reports Directory Index](reports/README.md)**
+
+---
+
 ## Token Optimization Strategy
 
 | Task Category | Engine | Cloud Token Cost |
@@ -133,7 +142,8 @@ http://localhost:8000
 | Scanned PDF OCR | Local RapidOCR (ONNX) | **0 Tokens** |
 | Deterministic Entity & Date Match | Local Regex Pattern Matcher | **0 Tokens** |
 | Document Rendering & Inspection | Local Word COM / PyMuPDF | **0 Tokens** |
-| Preliminary Semantic Classification | Local Ollama (`qwen3:8b`) | **0 Cloud Tokens** |
+| Dense Semantic DSL & Table Parsing | Local CPU Pydantic Parser (<0.5ms) | **0 Tokens (-75% Output Tokens)** |
+| Preliminary Semantic Classification | Local Ollama (`qwen2.5:7b`) | **0 Cloud Tokens** |
 | Complex Ambiguity & Mapping | Google Gemini Flash API | ~500 - 1500 Tokens |
 
 # opengen

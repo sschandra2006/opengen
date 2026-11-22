@@ -7,7 +7,7 @@ Enforces the Anti-Mediocrity Doctrine across all 5 Generative Engines:
 - Engine 4 (Handwriting): Non-repetition glyph checks and paper line-pitch calibration.
 - Engine 5 (Motion): 2.2s visual hook speed, pattern interrupts, and 9:16 mobile safe-zone boundaries.
 """
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Union
 import re
 from opengen.engines.document.sku_classifier import SemanticSKUClassifier, StyleRedliner
 from opengen.engines.motion.ad_critic import AdCriticAgent
@@ -56,6 +56,15 @@ class CreativeCriticGate:
             except Exception:
                 pass
 
+        # 5. Negative Space & Density Check (Tier 4 Quality Gate)
+        narrative = doc_data.get("executive_summary", "") or doc_data.get("narrative", "")
+        if narrative:
+            paragraphs = [p for p in narrative.split("\n\n") if p.strip()]
+            for p in paragraphs:
+                if len(p.split()) > 250:
+                    violations.append("NEGATIVE_SPACE_DEFICIT: Document contains unbroken narrative blocks (>250 words) violating Swiss editorial margin & negative space rules (<30% whitespace).")
+                    break
+
         passed = len(violations) == 0
         score = max(0, 100 - (len(violations) * 25))
         remedies = []
@@ -63,6 +72,7 @@ class CreativeCriticGate:
             remedies.append("Strip emojis and replace with Lucide/Phosphor vector icons.")
             remedies.append("Filter banned corporate buzzwords ('delve', 'testament to', 'beacon', 'unleash') using StyleRedliner.")
             remedies.append("Apply 80/20 merchandising classification: route top 10% items to Hero Bento Cards and remainder to Dot-Leader Menus.")
+            remedies.append("Break dense narrative into modular paragraphs with generous margins (>=30% whitespace).")
             if any("UNGROUNDED" in v for v in violations):
                 remedies.append("Ground claims strictly against entities and metrics present in Document Knowledge Graph.")
 
@@ -76,7 +86,7 @@ class CreativeCriticGate:
 
     @classmethod
     def audit_presentation(cls, deck_spec: Dict[str, Any]) -> Dict[str, Any]:
-        """Audits presentation deck for raw bullet points and monotonous layouts."""
+        """Audits presentation deck for raw bullet points, monotonous layouts, and negative space."""
         violations = []
         slides = deck_spec.get("slides", [])
 
@@ -92,6 +102,13 @@ class CreativeCriticGate:
             if layout in ["single_column", "two_column", "three_column"] and not s.get("bento_cards"):
                 violations.append(f"MONOTONOUS_LAYOUT: Slide {s.get('slide_number')} uses legacy bullet layout '{layout}' instead of responsive Bento Grid.")
 
+            # Check for slide element crowding (Negative Space < 30% / Content Area > 70%)
+            b_cards = s.get("bento_cards", [])
+            std_cards = s.get("cards", [])
+            total_elements = len(b_cards) + len(std_cards)
+            if total_elements > 8:
+                violations.append(f"NEGATIVE_SPACE_DEFICIT: Slide {s.get('slide_number')} contains {total_elements} cards, exceeding visual clutter threshold (whitespace < 30%).")
+
         if bullet_count > 5:
             violations.append(f"BULLET_POINT_DISEASE: Deck contains {bullet_count} raw bullet points. Audiences tune out.")
 
@@ -104,7 +121,8 @@ class CreativeCriticGate:
             "violations": violations,
             "remedies": [
                 "Convert bullet points into 6 Semantic Visual Components (Stat Cards, Roadmaps, Bento Boxes, Comparison Matrices).",
-                "Apply 12-column responsive Bento Grid compiler."
+                "Apply 12-column responsive Bento Grid compiler.",
+                "Preserve at least 30% negative space on each slide (cap bento cards at 6 per slide)."
             ] if not passed else []
         }
 
@@ -201,8 +219,96 @@ class CreativeCriticGate:
         return res
 
     @classmethod
+    def audit_ui(cls, ui_spec: Union[Dict[str, Any], str]) -> Dict[str, Any]:
+        """
+        Audits Web UI, React/JSX, or HTML code against Tier 1-4 Anti-Slop criteria:
+        1. Design System Token Binding: Flags ad-hoc inline styles or raw Bootstrap classes.
+        2. Strict Component AST Parsing: Flags unclosed tags and malformed elements.
+        3. Accessibility (a11y): Flags interactive elements missing aria-label or images missing alt.
+        4. Data Tables: Flags raw unstyled <table> elements without responsive containers.
+        5. Bento Grid Layouts: Verifies fluid responsive grid patterns (grid-cols-* or flex).
+        """
+        violations = []
+        if isinstance(ui_spec, dict):
+            raw_code = ui_spec.get("code", "") or ui_spec.get("html", "") or str(ui_spec)
+        else:
+            raw_code = str(ui_spec)
+
+        if not raw_code.strip():
+            return {
+                "engine": "ui",
+                "passed": False,
+                "score": 0,
+                "violations": ["EMPTY_UI_CODE: Provided UI code or specification is empty."],
+                "remedies": ["Provide valid HTML, JSX, or component markup."]
+            }
+
+        code_lower = raw_code.lower()
+
+        # 1. Generic Bootstrap & 2018 Syndrome
+        bootstrap_indicators = ["btn-primary", "jumbotron", "table-bordered", "form-control", "panel-default"]
+        found_bs = [b for b in bootstrap_indicators if b in code_lower]
+        if found_bs:
+            violations.append(f"GENERIC_BOOTSTRAP_SYNDROME: Code uses outdated Bootstrap classes ({', '.join(found_bs)}). Bind to shadcn/ui and Tailwind tokens.")
+
+        # 2. Ad-hoc Inline Style Hacks
+        style_attrs = re.findall(r'style=[\'"]([^\'"]+)[\'"]', raw_code, flags=re.IGNORECASE)
+        for s_val in style_attrs:
+            if any(p in s_val.lower() for p in ["background", "color", "font-size", "padding", "margin"]):
+                if "var(--" not in s_val:
+                    violations.append("INLINE_STYLE_HACK: Ad-hoc inline CSS styling detected. Bind directly to Tailwind / shadcn design tokens.")
+                    break
+
+        # 3. Unstyled Data Tables
+        if "<table" in code_lower:
+            table_tags = re.findall(r'<table[^>]*>', raw_code, flags=re.IGNORECASE)
+            for t in table_tags:
+                has_styling = any(k in t.lower() for k in ["class=", "classname=", "w-full", "min-w-full"])
+                if not has_styling or "overflow" not in raw_code.lower():
+                    violations.append("UNSTYLED_DATA_TABLE: Raw unstyled <table> detected without responsive container or design tokens.")
+                    break
+
+        # 4. Strict Component AST: Unclosed major tags
+        for tag in ["div", "section", "button", "table"]:
+            open_count = len(re.findall(rf'<{tag}\b[^>]*>', raw_code, flags=re.IGNORECASE))
+            self_closing = len(re.findall(rf'<{tag}\b[^>]*/>', raw_code, flags=re.IGNORECASE))
+            close_count = len(re.findall(rf'</{tag}>', raw_code, flags=re.IGNORECASE))
+            if (open_count - self_closing) != close_count:
+                violations.append(f"BROKEN_COMPONENT_AST: Unmatched <{tag}> tags (opened {open_count - self_closing}, closed {close_count}).")
+
+        # 5. Accessibility Attributes (a11y)
+        empty_buttons = re.findall(r'<button\b(?![^>]*aria-label)[^>]*>\s*(?:<svg[^>]*>.*?</svg>|<i\b[^>]*></i>|\s*)</button>', raw_code, flags=re.IGNORECASE | re.DOTALL)
+        if empty_buttons:
+            violations.append("ACCESSIBILITY_DEFICIT: Icon-only <button> missing aria-label attribute.")
+        imgs_no_alt = re.findall(r'<img\b(?![^>]*alt=)[^>]*>', raw_code, flags=re.IGNORECASE)
+        if imgs_no_alt:
+            violations.append("ACCESSIBILITY_DEFICIT: <img> element missing required 'alt' attribute.")
+
+        # 6. Check Design System Token Binding
+        if len(raw_code.split()) > 20:
+            has_tokens = any(k in raw_code for k in ["class=", "className=", "var(--", "bg-", "text-", "rounded-", "p-", "grid", "flex"])
+            if not has_tokens:
+                violations.append("MISSING_DESIGN_TOKENS: UI code does not bind to design tokens or Tailwind utility classes.")
+
+        passed = len(violations) == 0
+        score = max(0, 100 - (len(violations) * 20))
+        return {
+            "engine": "ui",
+            "passed": passed,
+            "score": score,
+            "violations": violations,
+            "remedies": [
+                "Bind components directly to Tailwind / shadcn/ui design tokens (e.g., bg-background, text-foreground, rounded-lg).",
+                "Ensure all HTML/JSX tags are balanced and correctly closed.",
+                "Wrap data tables in overflow-x-auto responsive containers with subtle borders.",
+                "Add aria-label to icon buttons and alt attributes to all img tags.",
+                "Organize dashboard cards into responsive CSS Bento Grids (grid-cols-1 md:grid-cols-3 gap-6)."
+            ] if not passed else []
+        }
+
+    @classmethod
     def audit_any(cls, engine: str, payload: Dict[str, Any]) -> Dict[str, Any]:
-        """Unified dispatch auditing any generation payload across Engines 1 to 5 + Audio."""
+        """Unified dispatch auditing any generation payload across Engines 1 to 5 + Audio + UI."""
         eng = engine.lower()
         if "doc" in eng:
             return cls.audit_document(payload)
@@ -216,5 +322,7 @@ class CreativeCriticGate:
             return cls.audit_audio(payload)
         elif "motion" in eng or "video" in eng:
             return cls.audit_motion(payload)
+        elif "ui" in eng or "code" in eng or "web" in eng:
+            return cls.audit_ui(payload)
         else:
             return {"engine": engine, "passed": True, "score": 100, "violations": []}

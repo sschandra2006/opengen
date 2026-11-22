@@ -39,7 +39,7 @@ def resolve_default_model() -> str:
         return "gemini/gemini-2.5-flash"
     if os.environ.get("OPENROUTER_API_KEY"):
         return "openrouter/auto"
-    return "ollama/qwen3:8b"
+    return "ollama/huihui_ai/qwen2.5-abliterated:7b"
 
 
 class Settings(BaseSettings):
@@ -76,8 +76,13 @@ class Settings(BaseSettings):
     DEFAULT_LLM_MODEL: str = resolve_default_model()
     DEFAULT_PRIMARY_MODEL: str = resolve_default_model()
     DEFAULT_FAST_MODEL: str = "openai/gpt-4o-mini"
-    DEFAULT_LOCAL_MODEL: str = "ollama/qwen3:8b"
+    DEFAULT_LOCAL_MODEL: str = "ollama/huihui_ai/qwen2.5-abliterated:7b"
     OLLAMA_BASE_URL: str = "http://localhost:11434"
+
+    # Token Reduction & Optimization Configurations (UTRA)
+    ENABLE_DENSE_DSL: bool = True
+    SURGICAL_REFLECTION_ENABLED: bool = True
+    MAX_STREAM_STOP_TOKENS: list = ["\n\n\n", "```", "<|im_end|>", "<|endoftext|>"]
 
     # API Keys (read from environment)
     GEMINI_API_KEY: Optional[str] = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
