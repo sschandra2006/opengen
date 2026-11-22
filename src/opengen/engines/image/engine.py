@@ -21,6 +21,7 @@ from opengen.engines.image.vectorizer import RasterVectorizer
 from opengen.engines.image.providers.together_flux import TogetherFluxAdapter
 from opengen.engines.image.providers.openai_dalle import OpenAIDalleAdapter
 from opengen.engines.image.providers.recraft_vector import RecraftVectorAdapter
+from opengen.engines.image.providers.local_diffusers import LocalDiffusersAdapter
 from opengen.hardware.governor import hardware_governor
 
 logger = logging.getLogger(__name__)
@@ -33,6 +34,7 @@ class ImageEngine:
         self.flux_adapter = TogetherFluxAdapter()
         self.dalle_adapter = OpenAIDalleAdapter()
         self.recraft_adapter = RecraftVectorAdapter()
+        self.local_diffusers = LocalDiffusersAdapter()
 
     def generate_image(self, request: ImageRequest, output_dir: Optional[Path] = None) -> ImageResponse:
         # 0. Prompt policy & moderation pre-check
@@ -113,16 +115,32 @@ class ImageEngine:
                 raw_bytes, mime, cost = self.dalle_adapter.generate(request)
                 ext = ".png"
                 is_vec = False
+            elif target_provider in ["local", "diffusers", "gpu"]:
+                raw_bytes, mime, cost = self.local_diffusers.generate(request)
+                ext = ".png"
+                is_vec = False
             else:
                 try:
                     raw_bytes, mime, cost = self.flux_adapter.generate(request)
                     ext = ".png"
                     is_vec = False
-                except Exception:
-                    logger.info("Falling back to mock SVG generation for local testing...")
-                    raw_bytes, mime, cost = self.recraft_adapter.generate(request)
-                    ext = ".svg"
-                    is_vec = True
+                except Exception as flux_err:
+                    if self.local_diffusers.is_available():
+                        try:
+                            logger.info(f"Cloud FLUX skipped ({flux_err}). Running local diffusers on GPU...")
+                            raw_bytes, mime, cost = self.local_diffusers.generate(request)
+                            ext = ".png"
+                            is_vec = False
+                        except Exception as local_err:
+                            logger.warning(f"Local diffusers failed ({local_err}), falling back to vector SVG...")
+                            raw_bytes, mime, cost = self.recraft_adapter.generate(request)
+                            ext = ".svg"
+                            is_vec = True
+                    else:
+                        logger.info("Falling back to vector SVG generation...")
+                        raw_bytes, mime, cost = self.recraft_adapter.generate(request)
+                        ext = ".svg"
+                        is_vec = True
 
         # 3. Post-Process via Compositor
         processed_bytes = ImageCompositor.process_image(raw_bytes, mime, request.transparent_background)

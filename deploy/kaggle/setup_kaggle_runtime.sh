@@ -19,7 +19,11 @@ else
     echo "[OpenGen] WARNING: No NVIDIA GPU detected. Running in CPU mode."
 fi
 
-# 2. Install Ollama into /tmp (avoids consuming /kaggle/working quota)
+# 2. Ensure multi-modal libraries (diffusers, accelerate, ffmpeg) are installed
+echo "[OpenGen] Verifying multi-modal dependencies..."
+pip install --quiet diffusers accelerate
+
+# 3. Install Ollama into /tmp (avoids consuming /kaggle/working quota)
 export OLLAMA_MODELS="/tmp/ollama_models"
 mkdir -p "$OLLAMA_MODELS"
 
